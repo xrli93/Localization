@@ -5,11 +5,12 @@
 #include "Word.h"
 
 using namespace std;
+
 template <class T>
 class Node
 {
 private:
-	T mCenter;
+	T mCenter{};
 	std::vector<Node<T> *> mChildNodes;
 	std::vector<Word<T> *> mWords;
 public:
@@ -21,12 +22,28 @@ public:
 
 	~Node()
 	{
+		for (size_t i = 0; i < mChildNodes.size(); i++)
+		{
+			delete mChildNodes[i];
+		}
+		mChildNodes.clear();
 
+
+		for (size_t i = 0; i < mWords.size(); i++)
+		{
+			delete mWords[i];
+		}
+		mWords.clear();
 	}
 
 	void AddWord(Word<T> *word)
 	{
 		mWords.push_back(word);
+	}
+
+	void RemoveWords()
+	{
+		mWords.clear();
 	}
 
 	void AddChildNode(Node<T> *node)
@@ -52,7 +69,6 @@ public:
 	// Sort child nodes according to their distances to a feature
 
 
-	// TODO: test
 	void SortChildNodes(T feature)
 	{
 		std::sort(mChildNodes.begin(), mChildNodes.end(),
@@ -80,10 +96,11 @@ public:
 		return mCenter;
 	}
 
-	T SetCenter(T center)
+	void SetCenter(const T& center)
 	{
 		mCenter = center;
 	}
 
 
 };
+

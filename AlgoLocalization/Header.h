@@ -4,8 +4,7 @@
 //	Mat labels;
 //	Mat centers;
 //
-//	Mat img_1;
-//	img_1 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo.png", IMREAD_COLOR); // Read the file
+//	Mat img = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo.png", IMREAD_COLOR); // Read the file
 //	const cv::Mat input = cv::imread("input.jpg", 0); //Load as grayscale
 //
 //	cv::Ptr<Feature2D> f2d = xfeatures2d::SIFT::create();
@@ -27,4 +26,6 @@
 //	cout << "end";
 //	cin.get();
 //
+
+
 //}

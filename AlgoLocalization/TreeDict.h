@@ -6,32 +6,84 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
-#define NUM_MAX_WORDS 3
-#define K_SPLIT 3
-#define MAX_CHILD_NUM 3
+#define NUM_MAX_WORDS 10
+#define K_SPLIT 6
+#define MAX_CHILD_NUM 2
 using namespace std;
-
 
 template <class T>
 class TreeDict
 {
 private:
-	Node<T> mRootNode;
+	Node<T> mRootNode{};
 
 public:
 	TreeDict()
 	{
-		mRootNode = Node<T>(0);
-	}
-	~TreeDict()
-	{
-		delete mRootNode
 
+	}
+
+	TreeDict(T origin)
+	{
+		mRootNode = Node<T>(origin);
+	}
+	~TreeDict() {}
+
+	void SetRootNodeCenter(const T& feature)
+	{
+		mRootNode.SetCenter(feature);
 	}
 
 	Node<T>* GetRootNode()
 	{
 		return &mRootNode;
+	}
+
+
+	// Count words in dict
+	int CountWords() { return CountWords(&mRootNode); }
+	int CountWords(Node<T>* node)
+	{
+		if (!node->IsLeafNode())
+		{
+			int sumWords = 0;
+			vector<Node<T> *> childList = node->GetChildNodes();
+			for (size_t i = 0; i < childList.size(); i++)
+			{
+				Node<T> *lNode = childList[i];
+				sumWords += CountWords(lNode);
+			}
+			return sumWords;
+
+		}
+		else
+		{
+			return node->GetWordsCount();
+		}
+	}
+
+	// Count nodes in dict
+
+	int CountNodes() { return CountNodes(&mRootNode); }
+	int CountNodes(Node<T>* node)
+	{
+		if (!node->IsLeafNode())
+		{
+			int sumNodes = 0;
+			vector<Node<T> *> childList = node->GetChildNodes();
+			for (size_t i = 0; i < childList.size(); i++)
+			{
+				Node<T> *lNode = childList[i];
+				sumNodes += CountNodes(lNode);
+			}
+			return sumNodes;
+
+		}
+		else
+		{
+			return 1;
+		}
+
 	}
 
 	// add a new node into the dict (not used!)
@@ -50,12 +102,39 @@ public:
 		return lParentNode;
 	}
 
+	// Add a feature to the dict
+	void AddFeature(T feature, int indexRoom)
+	{
+		vector<Word<T> *> wordList = Search(&mRootNode, feature);
+		if (!wordList.empty())
+		{
+			typename vector<Word<T> *>::iterator iter;
+			for (iter = wordList.begin(); iter != wordList.end(); iter++)
+			{
+				(*iter)->UpdateLabel(indexRoom);
+			}
+		}
+		else
+		{
+			Word<T> *newWord = new Word<T>(feature, indexRoom);
+			Node<T> *node = AddWordToDict(newWord);
+
+			if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
+			{
+				Expand(node);
+			}
+		}
+	}
+
 	///<summary>
 	/// Search in dict for words that contains feature
 	///</summary>
-	vector<Word<T> *> Search(Node<T> *node, T feature, int maxChildNum = MAX_CHILD_NUM) 
+	vector<Word<T> *> Search(T feature, int maxChildNum = MAX_CHILD_NUM)
 	{
-		//TODO
+		return Search(&mRootNode, feature, maxChildNum);
+	}
+	vector<Word<T> *> Search(Node<T> *node, T feature, int maxChildNum = MAX_CHILD_NUM)
+	{
 		vector<Word<T> *> wordList;
 		if (node->IsLeafNode())
 		{
@@ -75,22 +154,26 @@ public:
 			vector<Node<T> *> childList = node->GetChildNodes();
 			for (int i = 0; i < maxChildNum; i++)
 			{
-				//TODO: verify 
 				Node<T> *lNode = childList[i];
-				if (Localization::CalculateDistance(feature, lNode->GetCenter()) < RADIUS)
-				{
+				//vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
+				//wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
 
+				//TODO: Optimization. Filliat 08, really necessary to use frontier distance?
+				//Tests didn't show much difference in timing
+
+				if (Localization::CalculateDistance(feature, lNode->GetCenter()) < RADIUS * 5)
+				{
 					vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
 					wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
 				}
 			}
-			
+
 		}
-		return vector<Word<T> *>();
+		return wordList;
 	}
 
 
-	// Find in dict the leaf node whose center is nearest to feature
+	// Find in dict the leaf node whose center is nearest to feature (for insertion)
 	Node<T>* FindNearestNode(T feature)
 	{
 		Node<T> *minNode = &mRootNode;
@@ -114,77 +197,62 @@ public:
 	}
 
 	// Expand a leafnode when it contains many words
-	void Expand(Node<T>* node)
+	template <class T>
+	void Expand(Node<T>* node) {}
+
+	// using OpenCV and KMeans that comes with
+	void Expand(Node<cv::Mat>* node)
 	{
-		cout << "Creating new nodes" << endl;
-		vector<T> centers;
-		vector<int> labels;
+		cv::Mat centers;
+		cv::Mat labels;
 		vector<Word<T> *> lWordList = node->GetWords();
 
-		KMeansCluster(lWordList, labels, centers);
-		cout << "Centers number" << centers.size() << endl;
-		// creating new nodes at centers
-		//typename vector<T>::iterator iter;
-		//for (iter = centers.begin(); iter != centers.end(); iter++)
-		for (size_t centerIter = 0; centerIter != centers.size(); centerIter++)
+		KMeansCluster(lWordList, &labels, &centers);
+		for (size_t i = 0; i < centers.rows; i++)
 		{
-			Node<T> *newNode = new Node<T>(centers[centerIter]); // use new?
-																 // adding words to their nodes
-			for (size_t wordsIter = 0; wordsIter < lWordList.size(); wordsIter++)
+			Node<cv::Mat> *newNode = new Node<cv::Mat>(centers.row(i)); 
+			for (int wordsIter = 0; wordsIter < lWordList.size(); wordsIter++)
 			{
-				if (labels[wordsIter] == centerIter)
+				if (labels.at<int>(wordsIter, 0) == i)
 				{
-					cout << "Word attached to new node" << endl;
+					// adding words to their nodes
 					newNode->AddWord(lWordList[wordsIter]);
-					// newNode.AddWord(newWord); words that belong to this center
 				}
 			}
 			node->AddChildNode(newNode);
+			node->RemoveWords();
 		}
 	}
 
-	// Add a feature to the dict
-	void AddFeature(T feature, int indexRoom) // 
-	{
-		vector<Word<T> *> wordList = Search(&mRootNode, feature);
-		if (!wordList.empty())
-		{
-			cout << "Word found" << endl;
-			typename vector<Word<T> *>::iterator iter;
-			for (iter = wordList.begin(); iter != wordList.end(); iter++)
-			{
-				(*iter)->UpdateLabel(indexRoom);
-			}
-		}
-		else
-		{
-			cout << "No word found" << endl;
-			Word<T> *newWord = new Word<T>(feature, indexRoom);
-			Node<T> *node = AddWordToDict(newWord);
 
-			if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
-			{
-				Expand(node);
-			}
-		}
-	}
-
-	double KMeansCluster(vector<Word<T> *> wordList, vector<int> labels, vector<T> centers)
-	{
-		cv::Mat featureMat = MakeFeatureListFromWords(wordList);
-		return cv::kmeans(featureMat, K_SPLIT, labels, cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 10, 0.1), 3, cv::KMEANS_PP_CENTERS, centers);
-	}
-
-	// TODO: To modify
-	cv::Mat MakeFeatureListFromWords(vector<Word<T> *> wordList)
-	{
-		vector<T> featureList;
-		for (size_t i = 0; i < wordList.size(); i++)
-		{
-			featureList.push_back(wordList[i]->GetCenter());
-		}
-
-		cv::Mat featureMat(featureList.size(), 1, CV_32FC1);  // ** Make 1 column Mat from vector
-		return featureMat;
-	}
 };
+
+template <class T>
+double KMeansCluster(vector<Word<T> *> wordList, cv::Mat* labels, cv::Mat* centers)
+{
+	cv::Mat featureMat = MakeFeatureListFromWords(wordList);
+	return cv::kmeans(featureMat, K_SPLIT, *labels, cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 10, 0.1), 3, cv::KMEANS_PP_CENTERS, *centers);
+}
+
+template <class T>
+cv::Mat MakeFeatureListFromWords(vector<Word<T> *> wordList)
+{
+	vector<T> featureList;
+	for (size_t i = 0; i < wordList.size(); i++)
+	{
+		featureList.push_back(wordList[i]->GetCenter());
+	}
+
+	cv::Mat featureMat(featureList.size(), 1, CV_32FC1);  // ** Make 1 column Mat from vector
+	return featureMat;
+}
+template<> cv::Mat MakeFeatureListFromWords(vector<Word<cv::Mat> *> wordList)
+{
+	int featureDim = wordList[0]->GetCenter().cols;
+	cv::Mat featureList(wordList.size(), featureDim, CV_32FC1, cv::Scalar(0));
+	for (size_t i = 0; i < wordList.size(); i++)
+	{
+		wordList[i]->GetCenter().copyTo(featureList.row(i));
+	}
+	return featureList;
+}

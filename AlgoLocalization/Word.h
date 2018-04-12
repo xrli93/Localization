@@ -6,7 +6,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 
-#define RADIUS 1.0
+#define RADIUS 30.0
 #define NUM_ROOMS 3
 using namespace std;
 template <class T>
@@ -73,15 +73,33 @@ public:
 		}
 	}
 
+	vector<double> Vote()
+	{
+		vector<double> scores(NUM_ROOMS, 0);
+		int roomsSeen = 0;
+		for (size_t i = 0; i < NUM_ROOMS; i++)
+		{
+			roomsSeen += mPresenceRooms[i] ? 1 : 0;
+		}
+		if (roomsSeen > 0)
+		{
+			for (size_t i = 0; i < scores.size(); i++)
+			{
+				scores[i] = mPresenceRooms[i] ? log(NUM_ROOMS * 1.0 / roomsSeen) / log(NUM_ROOMS) : 0;
+			}
+		}
+		return scores;
+	}
+
 };
 
 
 namespace Localization
 {
 	template <class T>
-	double CalculateDistance(T x, T y) {}
+	double CalculateDistance(const T& x, const T& y) {}
 
-	template<> double CalculateDistance(vector<double> x, vector<double> y)
+	template<> double CalculateDistance(const vector<double>& x, const vector<double>& y)
 	{
 		assert(x.size() == y.size());
 		double norm = 0;
@@ -93,9 +111,14 @@ namespace Localization
 	}
 
 
-	template<> double CalculateDistance(int x, int y)
+	template<> double CalculateDistance(const int& x, const int& y)
 	{
 		return abs(x - y);
+	}
+
+	template<> double CalculateDistance(const cv::Mat& x, const cv::Mat& y)
+	{
+		return cv::norm(x - y, cv::NORM_L2);
 	}
 }
 
