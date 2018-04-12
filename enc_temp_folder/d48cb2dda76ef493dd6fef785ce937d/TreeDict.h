@@ -25,7 +25,6 @@ public:
 	}
 	~TreeDict()
 	{
-		delete mRootNode
 
 	}
 

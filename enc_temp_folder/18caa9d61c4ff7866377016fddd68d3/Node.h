@@ -34,19 +34,14 @@ public:
 		mChildNodes.push_back(node);
 	}
 
-	vector<Word<T> *> GetWords() const
+	vector<Word<T> *> GetWords()
 	{
 		return mWords;
 	}
 
-	vector<Node<T> *> GetChildNodes() const
+	vector<Node<T> *> GetChildNodes()
 	{
 		return mChildNodes;
-	}
-
-	int GetChildCount() const
-	{
-		return mChildNodes.size();
 	}
 
 	// Sort child nodes according to their distances to a feature

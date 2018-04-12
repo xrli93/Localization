@@ -2,6 +2,9 @@
 #include<vector>
 #include<assert.h>
 #include<cmath>
+#include "opencv2/highgui.hpp"
+#include "opencv2/core.hpp"
+#include "opencv2/imgproc.hpp"
 
 #define RADIUS 1.0
 #define NUM_ROOMS 3
@@ -59,7 +62,7 @@ public:
 
 	bool ContainFeature(T feature)
 	{
-		return (CalculateDistance(feature, mCenter) < sRadius) ? true : false;
+		return (Localization::CalculateDistance(feature, mCenter) < sRadius) ? true : false;
 	}
 
 	void Display()
@@ -73,24 +76,35 @@ public:
 };
 
 
-template <class T>
-double CalculateDistance(T x, T y) {}
-
-template<> double CalculateDistance(vector<double> x, vector<double> y)
+namespace Localization
 {
-	assert(x.size() == y.size());
-	double norm = 0;
-	for (size_t i = 0; i != x.size(); i++)
+	template <class T>
+	double CalculateDistance(T x, T y) {}
+
+	template<> double CalculateDistance(vector<double> x, vector<double> y)
 	{
-		norm += (x[i] - y[i]) * (x[i] - y[i]);
+		assert(x.size() == y.size());
+		double norm = 0;
+		for (size_t i = 0; i != x.size(); i++)
+		{
+			norm += (x[i] - y[i]) * (x[i] - y[i]);
+		}
+		return sqrt(norm);
 	}
-	return sqrt(norm);
+
+
+	template<> double CalculateDistance(int x, int y)
+	{
+		return abs(x - y);
+	}
 }
 
-
-template<> double CalculateDistance(int x, int y)
-{
-	return abs(x - y);
-}
-
-
+//class WordSIFT : public Word<Mat>
+//{
+//public:
+//	double CalculateDistance(Mat x, Mat y)
+//	{
+//		return 0;
+//	}
+//};
+//
