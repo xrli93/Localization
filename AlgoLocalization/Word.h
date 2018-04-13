@@ -18,7 +18,7 @@ namespace Localization
     {
     private:
         T mCenter; // word center in feature space
-        const double sRadius = RADIUS; // radius of word 
+        double mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
 
     private:
@@ -38,6 +38,12 @@ namespace Localization
         Word(T feature) : mCenter(feature) { initMPresenceRooms(); }
 
         Word(T feature, int indexRoom) : mCenter(feature)
+        {
+            initMPresenceRooms();
+            UpdateLabel(indexRoom);
+        }
+
+        Word(T feature, int indexRoom, double radius) : mCenter(feature), mRadius(radius)
         {
             initMPresenceRooms();
             UpdateLabel(indexRoom);
@@ -66,7 +72,7 @@ namespace Localization
 
         bool ContainFeature(T feature)
         {
-            return (Localization::CalculateDistance(feature, mCenter) < sRadius) ? true : false;
+            return (Localization::CalculateDistance(feature, mCenter) < mRadius) ? true : false;
         }
 
         void Display()

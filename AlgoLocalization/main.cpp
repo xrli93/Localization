@@ -4,7 +4,8 @@
 #include "Node.h"
 #include "TreeDict.h"
 #include "Constants.h"
-#include "ImageLearner.h";
+#include "Localizer.h"
+#include "ImageLearner.h"
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
@@ -67,22 +68,22 @@ void testSIFT()
 
     auto t1 = std::chrono::high_resolution_clock::now();
     learner.LearnImage(img1, 0);
-    //learner.LearnImage(img11, 0);
-    //learner.LearnImage(img12, 0);
+    learner.LearnImage(img11, 0);
+    learner.LearnImage(img12, 0);
     TreeDict<cv::Mat> myDict = learner.mDict;
 
     cout << "Total Words " << myDict.CountWords(myDict.GetRootNode()) << endl;
     cout << "Total Nodes " << myDict.CountNodes(myDict.GetRootNode()) << endl;
 
     learner.LearnImage(img2, 1);
-    //learner.LearnImage(img21, 1);
-    //learner.LearnImage(img22, 1);
+    learner.LearnImage(img21, 1);
+    learner.LearnImage(img22, 1);
     cout << "Total Words " << myDict.CountWords(myDict.GetRootNode()) << endl;
     cout << "Total Nodes " << myDict.CountNodes(myDict.GetRootNode()) << endl;
 
     learner.LearnImage(img3, 2);
-    //learner.LearnImage(img31, 2);
-    //learner.LearnImage(img32, 2);
+    learner.LearnImage(img31, 2);
+    learner.LearnImage(img32, 2);
     cout << "Total Words " << myDict.CountWords(myDict.GetRootNode()) << endl;
     cout << "Total Nodes " << myDict.CountNodes(myDict.GetRootNode()) << endl;
     cout << "Total features learnt" << learner.mFeatureCount << endl;
@@ -103,8 +104,8 @@ void testSIFT()
     std::cout << "took "
         << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
         << " milliseconds\n";
-    //cv::Mat features = learner.CalculateFeatures(img);
-    //cv::Mat row(features.row(0));
+    //Mat features = learner.CalculateFeatures(img);
+    //Mat row(features.row(0));
 
     double quality = 0;
     int res = learner.IdentifyImage(img21, &quality);
@@ -112,7 +113,48 @@ void testSIFT()
 }
 
 int main() {
+    //ColorHistogramLearner learner = ColorHistogramLearner();
+    //Mat img1 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo1.png", IMREAD_COLOR); // Read the file
+    //Mat img2 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo2.png", IMREAD_COLOR); // Read the file
+    //Mat img3 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo3.png", IMREAD_COLOR); // Read the file
+    //Mat img11 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo11.png", IMREAD_COLOR); // Read the file
+    //Mat img12 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo12.png", IMREAD_COLOR); // Read the file
+    //Mat img21 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo21.png", IMREAD_COLOR); // Read the file
+    //Mat img22 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo22.png", IMREAD_COLOR); // Read the file
+    //Mat img31 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo31.png", IMREAD_COLOR); // Read the file
+    //Mat img32 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo32.png", IMREAD_COLOR); // Read the file
+    ////learner.LearnImage(img1, 0);
+    ////learner.LearnImage(img11, 0);
+    ////learner.LearnImage(img12, 0);
+    ////learner.LearnImage(img2, 1);
+    ////learner.LearnImage(img21, 1);
+    ////learner.LearnImage(img22, 1);
+    ////learner.LearnImage(img3, 2);
+    ////learner.LearnImage(img31, 2);
+    ////learner.LearnImage(img32, 2);
+    //TreeDict<cv::Mat> myDict = learner.mDict;
+
+    //cout << "Total Words " << myDict.CountWords(myDict.GetRootNode()) << endl;
+    //cout << "Total Nodes " << myDict.CountNodes(myDict.GetRootNode()) << endl;
+    //cout << "Total features learnt" << learner.mFeatureCount << endl;
+
+    //Localizer localizer = Localizer();
+
+    //localizer.AddImage(img1, 0);
+    //localizer.AddImage(img11, 0);
+    //localizer.AddImage(img12, 0);
+    //localizer.AddImage(img2, 1);
+    //localizer.AddImage(img21, 1);
+    //localizer.AddImage(img22, 1);
+    //localizer.AddImage(img3, 2);
+    //localizer.AddImage(img31, 2);
+    //localizer.AddImage(img32, 2);
+
+    //localizer.
+    
     testSIFT();
+
+
     std::cin.get();
     return 0;
 }

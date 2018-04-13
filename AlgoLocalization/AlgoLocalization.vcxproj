@@ -118,6 +118,7 @@
   <ItemGroup>
     <ClInclude Include="Constants.h" />
     <ClInclude Include="ImageLearner.h" />
+    <ClInclude Include="Localizer.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="TreeDict.h" />
     <ClInclude Include="Word.h" />

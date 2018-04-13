@@ -16,6 +16,7 @@ namespace Localization
     {
     private:
         Node<T> mRootNode{};
+        int mFeatureMethod;
 
     public:
         TreeDict()
@@ -27,6 +28,11 @@ namespace Localization
         {
             mRootNode = Node<T>(origin);
         }
+
+        //TreeDict(int featureMethod) : mFeatureMethod(featureMethod)
+        //{
+        //    mRootNode = Node<T>();
+        //}
 
         ~TreeDict() {}
 
@@ -40,6 +46,10 @@ namespace Localization
             return &mRootNode;
         }
 
+        void SetFeatureMethod(int featureMethod)
+        {
+            mFeatureMethod = featureMethod;
+        }
 
         // Count words in dict
         int CountWords() { return CountWords(&mRootNode); }
@@ -149,17 +159,18 @@ namespace Localization
                 for (int i = 0; i < maxChildNum; i++)
                 {
                     Node<T> *lNode = childList[i];
-                    //vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
-                    //wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
 
                     //TODO: Optimization. Filliat 08, really necessary to use frontier distance?
                     //Tests didn't show much difference in timing
 
-                    if (Localization::CalculateDistance(feature, lNode->GetCenter()) < RADIUS * 5)
-                    {
-                        vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
-                        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
-                    }
+                    vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
+                    wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+
+                    //if (Localization::CalculateDistance(feature, lNode->GetCenter()) < RADIUS * 5)
+                    //{
+                    //    vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
+                    //    wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                    //}
                 }
 
             }
