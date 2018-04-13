@@ -24,10 +24,10 @@
     <ClInclude Include="TreeDict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header.h">
+    <ClInclude Include="ImageLearner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImageLearner.h">
+    <ClInclude Include="Constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
