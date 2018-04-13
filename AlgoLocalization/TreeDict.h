@@ -20,13 +20,14 @@ namespace Localization
     public:
         TreeDict()
         {
-
+            mRootNode = Node<T>();
         }
 
         TreeDict(T origin)
         {
             mRootNode = Node<T>(origin);
         }
+
         ~TreeDict() {}
 
         void SetRootNodeCenter(const T& feature)
@@ -196,6 +197,7 @@ namespace Localization
         // using OpenCV and KMeans that comes with
         void Expand(Node<cv::Mat>* node)
         {
+
             cv::Mat centers;
             cv::Mat labels;
             vector<Word<T> *> lWordList = node->GetWords();
@@ -213,8 +215,8 @@ namespace Localization
                     }
                 }
                 node->AddChildNode(newNode);
-                node->RemoveWords();
             }
+            node->RemoveWords();
         }
 
 

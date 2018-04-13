@@ -3,6 +3,7 @@
 #include <chrono>
 #include "Node.h"
 #include "TreeDict.h"
+#include "Constants.h"
 #include "ImageLearner.h";
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
@@ -111,8 +112,6 @@ void testSIFT()
 }
 
 int main() {
-    //SIFTImageLearner<cv::Mat> learner = SIFTImageLearner<cv::Mat>();
-    //testCH();
     testSIFT();
     std::cin.get();
     return 0;

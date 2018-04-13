@@ -26,17 +26,15 @@ namespace Localization
 
         ~Node()
         {
-            for (size_t i = 0; i < mChildNodes.size(); i++)
-            {
-                delete mChildNodes[i];
-            }
-
-
             for (size_t i = 0; i < mWords.size(); i++)
             {
                 delete mWords[i];
             }
-            mWords.clear();
+
+            for (size_t i = 0; i < mChildNodes.size(); i++)
+            {
+                delete mChildNodes[i];
+            }
         }
 
         void AddWord(Word<T> *word)
@@ -46,9 +44,15 @@ namespace Localization
 
         void RemoveWords()
         {
-            while (!mChildNodes.empty())
-                mChildNodes.pop_back();
+            while (!mWords.empty())
+                mWords.pop_back();
         }
+        
+        void GiveParent()
+        {
+            hasParent = true;
+        }
+
 
         void AddChildNode(Node<T> *node)
         {
