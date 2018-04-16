@@ -41,7 +41,7 @@ namespace Localization
             vector<double> votes(NUM_ROOMS, 0);
             for (size_t i = 0; i < features.rows; i++)
             {
-                vector<Word<Mat> *> wordList = mDict.Search(features.row(i));
+                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
                 typename vector<Word<Mat> *>::iterator iter;
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
@@ -55,7 +55,21 @@ namespace Localization
                 quality = new double;
             }
             return CountVotes(votes, quality);
-            delete quality;
+        }
+
+        int CountFeatures()
+        {
+            return mFeatureCount;
+        }
+
+        int CountWords()
+        {
+            return mDict.CountWords();
+        }
+
+        int CountNodes()
+        {
+            return mDict.CountNodes();
         }
 
     };
@@ -86,6 +100,7 @@ namespace Localization
         SIFTImageLearner()
         {
             mDict.SetFeatureMethod(FEATURE_SIFT);
+            mDict.SetRadius(RADIUS_SIFT);
         }
         Mat CalculateFeatures(const Mat& img)
         {
@@ -108,6 +123,7 @@ namespace Localization
         ColorHistogramLearner()
         {
             mDict.SetFeatureMethod(FEATURE_COLOR);
+            mDict.SetRadius(RADIUS_COLOR);
         }
         Mat GetHue(const Mat& img)
         {
@@ -144,28 +160,26 @@ namespace Localization
             int height = img.rows;
             // Type 1: 40 x 40 every 20 pixels
             // Type 2: 20 x 20 every 10 pixels
-            int size = 40;
-            int stride = 20;
-            // TODO: use stride (but will cause too)
+            CalculateWindows(img, width, height, 40, 20, &imgWindows); // Type 1
+            //If two levels, rather slow
+            //CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
+            return imgWindows;
+        }
+
+        void CalculateWindows(const Mat& img, int width, int height, int size, int stride, vector<Mat>* windows)
+        {
             int nX = (int)((width - size) / stride);
             int nY = (int)((height - size) / stride);
-
-
             for (size_t i = 0; i < nX; i++)
             {
                 for (size_t j = 0; j < nY; j++)
                 {
                     Rect window(i * stride, j * stride, size, size);
                     Mat imgWindow(img(window));
-                    imgWindows.push_back(imgWindow);
+                    windows->push_back(imgWindow);
                 }
-
             }
-            return imgWindows;
         }
-
-
     };
-
 }
 

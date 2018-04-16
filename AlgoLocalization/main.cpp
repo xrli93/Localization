@@ -112,33 +112,40 @@ void testSIFT()
     cout << "Room is " << res << endl;
 }
 
-int main() {
-    //ColorHistogramLearner learner = ColorHistogramLearner();
-    //Mat img1 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo1.png", IMREAD_COLOR); // Read the file
-    //Mat img2 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo2.png", IMREAD_COLOR); // Read the file
-    //Mat img3 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo3.png", IMREAD_COLOR); // Read the file
-    //Mat img11 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo11.png", IMREAD_COLOR); // Read the file
-    //Mat img12 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo12.png", IMREAD_COLOR); // Read the file
-    //Mat img21 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo21.png", IMREAD_COLOR); // Read the file
-    //Mat img22 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo22.png", IMREAD_COLOR); // Read the file
-    //Mat img31 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo31.png", IMREAD_COLOR); // Read the file
-    //Mat img32 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo32.png", IMREAD_COLOR); // Read the file
-    ////learner.LearnImage(img1, 0);
-    ////learner.LearnImage(img11, 0);
-    ////learner.LearnImage(img12, 0);
-    ////learner.LearnImage(img2, 1);
-    ////learner.LearnImage(img21, 1);
-    ////learner.LearnImage(img22, 1);
-    ////learner.LearnImage(img3, 2);
-    ////learner.LearnImage(img31, 2);
-    ////learner.LearnImage(img32, 2);
-    //TreeDict<cv::Mat> myDict = learner.mDict;
 
-    //cout << "Total Words " << myDict.CountWords(myDict.GetRootNode()) << endl;
-    //cout << "Total Nodes " << myDict.CountNodes(myDict.GetRootNode()) << endl;
-    //cout << "Total features learnt" << learner.mFeatureCount << endl;
+void testLocalizer()
+{
+    Mat img1 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo1.png", IMREAD_COLOR); // Read the file
+    Mat img2 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo2.png", IMREAD_COLOR); // Read the file
+    Mat img3 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo3.png", IMREAD_COLOR); // Read the file
+    Mat img11 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo11.png", IMREAD_COLOR); // Read the file
+    Mat img12 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo12.png", IMREAD_COLOR); // Read the file
+    Mat img21 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo21.png", IMREAD_COLOR); // Read the file
+    Mat img22 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo22.png", IMREAD_COLOR); // Read the file
+    Mat img31 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo31.png", IMREAD_COLOR); // Read the file
+    Mat img32 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo32.png", IMREAD_COLOR); // Read the file
 
-    //Localizer localizer = Localizer();
+    Mat blue1 = imread("C:\\Users\\Hoth\\Downloads\\blue1.jpg", IMREAD_COLOR); // Read the file
+    Mat blue2 = imread("C:\\Users\\Hoth\\Downloads\\blue2.jpg", IMREAD_COLOR); // Read the file
+    Mat red1 = imread("C:\\Users\\Hoth\\Downloads\\red1.jpg", IMREAD_COLOR); // Read the file
+    Mat mix1 = imread("C:\\Users\\Hoth\\Downloads\\mix1.jpg", IMREAD_COLOR); // Read the file
+    Mat mix2 = imread("C:\\Users\\Hoth\\Downloads\\mix2.jpg", IMREAD_COLOR); // Read the file
+    Mat green1 = imread("C:\\Users\\Hoth\\Downloads\\green1.jpg", IMREAD_COLOR); // Read the file
+    Mat green2 = imread("C:\\Users\\Hoth\\Downloads\\green2.jpg", IMREAD_COLOR); // Read the file
+
+    // Reading
+    //learner.LearnImage(img1, 0);
+    //learner.LearnImage(img11, 0);
+    //learner.LearnImage(img12, 0);
+    //learner.LearnImage(img2, 1);
+    //learner.LearnImage(img21, 1);
+    //learner.LearnImage(img22, 1);
+    //learner.LearnImage(img3, 2);
+    //learner.LearnImage(img31, 2);
+    //learner.LearnImage(img32, 2);
+
+
+    Localizer localizer = Localizer();
 
     //localizer.AddImage(img1, 0);
     //localizer.AddImage(img11, 0);
@@ -150,10 +157,40 @@ int main() {
     //localizer.AddImage(img31, 2);
     //localizer.AddImage(img32, 2);
 
-    //localizer.
-    
-    testSIFT();
+    localizer.AddImage(blue1, 0);
+    localizer.AddImage(blue2, 0);
+    localizer.AddImage(green1, 1);
+    localizer.AddImage(green2, 1);
+    localizer.AddImage(mix1, 2);
+    localizer.AddImage(mix2, 2);
 
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    localizer.LearnCollection();
+
+    vector<int> wordsCount = localizer.CountWords();
+    vector<int> nodesCount = localizer.CountNodes();
+    vector<int> featuresCount = localizer.CountFeatures();
+    cout << "SIFT Words " << wordsCount[0] << " color " << wordsCount[1] << endl;
+    cout << "SIFT Nodes " << nodesCount[0] << " color " << nodesCount[1] << endl;
+    cout << "SIFT features learnt" << featuresCount[0] << " color " << featuresCount[1] << endl;
+    vector<Mat> imgs;
+    imgs.push_back(red1);
+    //imgs.push_back(img12);
+    cout << localizer.IdentifyRoom(imgs);
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "took "
+        << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+        << " milliseconds\n";
+    
+    //testSIFT();
+
+}
+int main() {
+
+    //testSIFT();
+    testLocalizer();
 
     std::cin.get();
     return 0;

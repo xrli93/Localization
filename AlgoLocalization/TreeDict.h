@@ -17,6 +17,7 @@ namespace Localization
     private:
         Node<T> mRootNode{};
         int mFeatureMethod;
+        double mRadius = RADIUS;
 
     public:
         TreeDict()
@@ -45,6 +46,12 @@ namespace Localization
         {
             return &mRootNode;
         }
+
+        void SetRadius(double radius)
+        {
+            mRadius = radius;
+        }
+
 
         void SetFeatureMethod(int featureMethod)
         {
@@ -109,7 +116,7 @@ namespace Localization
         // Add a feature to the dict
         void AddFeature(T feature, int indexRoom)
         {
-            vector<Word<T> *> wordList = Search(&mRootNode, feature);
+            vector<Word<T> *> wordList = Search(feature, MAX_CHILD_NUM, FULL_SEARCH);
             if (!wordList.empty())
             {
                 typename vector<Word<T> *>::iterator iter;
@@ -120,7 +127,7 @@ namespace Localization
             }
             else
             {
-                Word<T> *newWord = new Word<T>(feature, indexRoom);
+                Word<T> *newWord = new Word<T>(feature, indexRoom, mRadius);
                 Node<T> *node = AddWordToDict(newWord);
 
                 if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
@@ -133,11 +140,11 @@ namespace Localization
         ///<summary>
         /// Search in dict for words that contains feature
         ///</summary>
-        vector<Word<T> *> Search(T feature, int maxChildNum = MAX_CHILD_NUM)
+        vector<Word<T> *> Search(T feature, int maxChildNum = MAX_CHILD_NUM, bool fullSearch = false)
         {
-            return Search(&mRootNode, feature, maxChildNum);
+            return Search(&mRootNode, feature, maxChildNum, fullSearch);
         }
-        vector<Word<T> *> Search(Node<T> *node, T feature, int maxChildNum = MAX_CHILD_NUM)
+        vector<Word<T> *> Search(Node<T> *node, T feature, int maxChildNum = MAX_CHILD_NUM, bool fullSearch = false)
         {
             vector<Word<T> *> wordList;
             if (node->IsLeafNode())
@@ -160,17 +167,17 @@ namespace Localization
                 {
                     Node<T> *lNode = childList[i];
 
-                    //TODO: Optimization. Filliat 08, really necessary to use frontier distance?
-                    //Tests didn't show much difference in timing
-
-                    vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
-                    wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
-
-                    //if (Localization::CalculateDistance(feature, lNode->GetCenter()) < RADIUS * 5)
-                    //{
-                    //    vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum);
-                    //    wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
-                    //}
+                    //TODO: Optimization. Filliat 08. What is frontier distance?
+                    if (fullSearch)
+                    {
+                        vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
+                        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                    }
+                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < mRadius * 1.5)
+                    {
+                        vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
+                        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                    }
                 }
 
             }

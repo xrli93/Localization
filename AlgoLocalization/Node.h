@@ -26,15 +26,17 @@ namespace Localization
 
         ~Node()
         {
-            for (size_t i = 0; i < mWords.size(); i++)
-            {
-                delete mWords[i];
-            }
+            //for (size_t i = 0; i < mWords.size(); i++)
+            //{
+            //    delete mWords[i];
+            //}
 
-            for (size_t i = 0; i < mChildNodes.size(); i++)
-            {
-                delete mChildNodes[i];
-            }
+            //for (size_t i = 0; i < mChildNodes.size(); i++)
+            //{
+            //    delete mChildNodes[i];
+            //}
+            mChildNodes.clear();
+            mWords.clear();
         }
 
         void AddWord(Word<T> *word)

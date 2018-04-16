@@ -56,6 +56,11 @@ namespace Localization
             return mCenter;
         }
 
+        double GetRadius()
+        {
+            return mRadius;
+        }
+
         void SetCenter(T center)
         {
             mCenter = center;
@@ -83,6 +88,7 @@ namespace Localization
             }
         }
 
+        // Vote using inverse document frequency 
         vector<double> Vote()
         {
             vector<double> scores(NUM_ROOMS, 0);

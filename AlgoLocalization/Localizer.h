@@ -13,8 +13,8 @@ namespace Localization
     class Localizer
     {
     private:
-        SIFTImageLearner SIFTLearner{};
-        ColorHistogramLearner ColorLearner{};
+        SIFTImageLearner mSIFTLearner{};
+        ColorHistogramLearner mColorLearner{};
         vector<double> secondVotes;
         vector<Mat> imageCollection;
         vector<int> labelCollection;
@@ -25,6 +25,22 @@ namespace Localization
         };
 
         ~Localizer() { };
+
+        vector<int> CountWords()
+        {
+            return vector<int> {mSIFTLearner.CountWords(), mColorLearner.CountWords()};
+        }
+
+        vector<int> CountNodes()
+        {
+            return vector<int> {mSIFTLearner.CountNodes(), mColorLearner.CountNodes()};
+        }
+
+        vector<int> CountFeatures()
+        {
+            return vector<int> {mSIFTLearner.CountFeatures(), mColorLearner.CountFeatures()};
+        }
+
 
         void AddImage(Mat img, int label)
         {
@@ -38,27 +54,32 @@ namespace Localization
             {
                 Mat img = imageCollection[i];
                 int label = labelCollection[i];
-                SIFTLearner.LearnImage(img, label);
-                ColorLearner.LearnImage(img, label);
+                mSIFTLearner.LearnImage(img, label);
+                mColorLearner.LearnImage(img, label);
             }
         }
 
-        int IdentifyRoom(vector<Mat> images, vector<int> labels)
+        int IdentifyRoom(vector<Mat> images)
         {
             for (size_t i = 0; i < images.size(); i++)
             {
                 Mat img = images[i];
-                int label = labels[i];
-                int SIFTVote = SIFTLearner.IdentifyImage(img);
-                int ColorVote = ColorLearner.IdentifyImage(img);
-                if (SIFTVote > 0)
+                int SIFTVote = mSIFTLearner.IdentifyImage(img);
+                int ColorVote = mColorLearner.IdentifyImage(img);
+                if (SIFTVote > -1)
                 {
+                    cout << "SIFT voting" << SIFTVote << endl;
                     secondVotes[SIFTVote] += 1;
                 }
 
-                if (ColorVote > 0)
+                if (ColorVote > -1)
                 {
+                    cout << "Color voting" << ColorVote << endl;
                     secondVotes[ColorVote] += 1;
+                }
+                else
+                {
+                    cout << "Color not voting" << ColorVote << endl;
                 }
             }
             double quality;
