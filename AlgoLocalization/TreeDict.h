@@ -18,6 +18,8 @@ namespace Localization
         Node<T> mRootNode{};
         int mFeatureMethod;
         double mRadius = RADIUS;
+        double mFrontier = RADIUS * 5;
+        int mNMaxWords = NUM_MAX_WORDS;
 
     public:
         TreeDict()
@@ -51,7 +53,20 @@ namespace Localization
         {
             mRadius = radius;
         }
+        void SetRadius()
+        {
+            mRadius = (mFeatureMethod == FEATURE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
+        }
 
+        void SetFrontier()
+        {
+            mFrontier = (mFeatureMethod == FEATURE_COLOR) ? FRONTIER_COLOR : FRONTIER_SIFT;
+        }
+
+        void SetNMaxWords(int nMaxWords)
+        {
+            mNMaxWords = nMaxWords;
+        }
 
         void SetFeatureMethod(int featureMethod)
         {
@@ -130,7 +145,7 @@ namespace Localization
                 Word<T> *newWord = new Word<T>(feature, indexRoom, mRadius);
                 Node<T> *node = AddWordToDict(newWord);
 
-                if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
+                if (node->GetWordsCount() > mNMaxWords) // Many words necessary to create new nodes
                 {
                     Expand(node);
                 }
@@ -173,7 +188,7 @@ namespace Localization
                         vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
                     }
-                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < mRadius * 1.5)
+                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < mFrontier)
                     {
                         vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());

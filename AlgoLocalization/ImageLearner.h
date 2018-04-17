@@ -17,6 +17,7 @@ namespace Localization
     public:
         ImageLearner() {};
         ~ImageLearner() {};
+
     public:
         virtual Mat CalculateFeatures(const Mat& img) = 0;
         //virtual int IdentifyImage(Mat img) = 0;
@@ -35,6 +36,7 @@ namespace Localization
 
         }
 
+        // First level voting
         int IdentifyImage(Mat img, double* quality = NULL)
         {
             Mat features = CalculateFeatures(img);
@@ -45,6 +47,7 @@ namespace Localization
                 typename vector<Word<Mat> *>::iterator iter;
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
+                    // voting by words
                     vector<double> lVote = (*iter)->Vote();
                     transform(votes.begin(), votes.end(), lVote.begin(), votes.begin(),
                         plus<int>());
@@ -54,7 +57,7 @@ namespace Localization
             {
                 quality = new double;
             }
-            return CountVotes(votes, quality);
+            return CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
         }
 
         int CountFeatures()
@@ -74,7 +77,7 @@ namespace Localization
 
     };
 
-    int CountVotes(vector<double>& votes, double* quality = NULL)
+    int CountVotes(vector<double>& votes, double* quality = NULL, double threshold = THRESHOLD_FIRST_VOTE)
     {
         int result;
         vector<double>::iterator maxIter = max_element(votes.begin(), votes.end());
@@ -88,8 +91,9 @@ namespace Localization
         *maxIter = 0; // set max vote to zero
         double secondVote = *max_element(votes.begin(), votes.end());
         *maxIter = maxVote; // restore
-        *quality = (maxVote - secondVote) / sumVote;
-        return (*quality > THRESHOLD_FIRST_VOTE) ? result : -1;
+        double lQuality = (maxVote - secondVote) / sumVote;
+        *quality = lQuality;
+        return (lQuality > threshold) ? result : -1;
     }
 
 
@@ -100,11 +104,20 @@ namespace Localization
         SIFTImageLearner()
         {
             mDict.SetFeatureMethod(FEATURE_SIFT);
-            mDict.SetRadius(RADIUS_SIFT);
+            mDict.SetRadius();
+            mDict.SetFrontier();
         }
+
+        SIFTImageLearner(double radius)
+        {
+            mDict.SetFeatureMethod(FEATURE_SIFT);
+            mDict.SetRadius(radius);
+        }
+
+
         Mat CalculateFeatures(const Mat& img)
         {
-            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create();
+            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(1000, 3, 0.03, 10, 1.6);
 
             std::vector<KeyPoint> keypoints;
             f2d->detect(img, keypoints);
@@ -123,7 +136,8 @@ namespace Localization
         ColorHistogramLearner()
         {
             mDict.SetFeatureMethod(FEATURE_COLOR);
-            mDict.SetRadius(RADIUS_COLOR);
+            mDict.SetRadius();
+            mDict.SetFrontier();
         }
         Mat GetHue(const Mat& img)
         {
@@ -149,7 +163,6 @@ namespace Localization
                 calcHist(&hue, 1, 0, Mat(), hist, 1, &nBins, &histRanges, true, false);
                 features.push_back(hist.t());
             }
-            cout << "feaures count" << features.size() << endl;
             return features;
         }
 
@@ -162,7 +175,7 @@ namespace Localization
             // Type 2: 20 x 20 every 10 pixels
             CalculateWindows(img, width, height, 40, 20, &imgWindows); // Type 1
             //If two levels, rather slow
-            //CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
+            CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
             return imgWindows;
         }
 

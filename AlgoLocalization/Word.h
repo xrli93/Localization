@@ -141,6 +141,8 @@ namespace Localization
             return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
         }
     }
+
+    
 }
 
 //class WordSIFT : public Word<Mat>

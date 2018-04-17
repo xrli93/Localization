@@ -13,7 +13,7 @@ namespace Localization
     class Localizer
     {
     private:
-        SIFTImageLearner mSIFTLearner{};
+        SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner{};
         vector<double> secondVotes;
         vector<Mat> imageCollection;
@@ -23,6 +23,7 @@ namespace Localization
         {
             secondVotes = vector<double>(NUM_ROOMS, 0);
         };
+
 
         ~Localizer() { };
 
@@ -44,7 +45,9 @@ namespace Localization
 
         void AddImage(Mat img, int label)
         {
-            imageCollection.push_back(img);
+            Mat lImg = Mat(320, 240, CV_8UC1); // TODO
+            resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
+            imageCollection.push_back(lImg);
             labelCollection.push_back(label);
         }
 
@@ -59,17 +62,23 @@ namespace Localization
             }
         }
 
-        int IdentifyRoom(vector<Mat> images)
+        // Second level voting for images on two feature spaces
+        int IdentifyRoom(vector<Mat> images, double* quality = NULL)
         {
+            fill(secondVotes.begin(), secondVotes.end(), 0);
             for (size_t i = 0; i < images.size(); i++)
             {
                 Mat img = images[i];
-                int SIFTVote = mSIFTLearner.IdentifyImage(img);
-                int ColorVote = mColorLearner.IdentifyImage(img);
+                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
+                int ColorVote = mColorLearner.IdentifyImage(img, quality);
                 if (SIFTVote > -1)
                 {
                     cout << "SIFT voting" << SIFTVote << endl;
                     secondVotes[SIFTVote] += 1;
+                }
+                else
+                {
+                    cout << "SIFT not voting" << endl;
                 }
 
                 if (ColorVote > -1)
@@ -79,11 +88,10 @@ namespace Localization
                 }
                 else
                 {
-                    cout << "Color not voting" << ColorVote << endl;
+                    cout << "Color not voting" << endl;
                 }
             }
-            double quality;
-            return Localization::CountVotes(secondVotes, &quality);
+            return Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
         }
 
     };
