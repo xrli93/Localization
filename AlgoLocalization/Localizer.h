@@ -26,6 +26,10 @@ namespace Localization
 
 
         ~Localizer() { };
+        vector<int> AnalyseDict(int featureMethod)
+        {
+            return (featureMethod == FEATURE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
+        }
 
         vector<int> CountWords()
         {
@@ -40,6 +44,12 @@ namespace Localization
         vector<int> CountFeatures()
         {
             return vector<int> {mSIFTLearner.CountFeatures(), mColorLearner.CountFeatures()};
+        }
+
+        void RemoveCommonWords()
+        {
+            mSIFTLearner.RemoveCommonWords();
+            mColorLearner.RemoveCommonWords();
         }
 
 
@@ -80,14 +90,15 @@ namespace Localization
         }
 
         // Second level voting for images on two feature spaces
-        int IdentifyRoom(vector<Mat> images, double* quality = NULL, bool verbose = false)
+        int IdentifyRoom(vector<Mat> images, double* quality = NULL, bool verbose = false, int ref = -1)
         {
             fill(secondVotes.begin(), secondVotes.end(), 0);
             for (size_t i = 0; i < images.size(); i++)
             {
                 Mat img = images[i];
-                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
-                int ColorVote = mColorLearner.IdentifyImage(img, quality);
+                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
+                int ColorVote = mColorLearner.IdentifyImage(img, quality, ref);
+
                 if (SIFTVote > -1)
                 {
                     if (verbose)
@@ -106,7 +117,6 @@ namespace Localization
 
                 if (ColorVote > -1)
                 {
-
                     if (verbose)
                     {
                         cout << "Color voting" << ColorVote << endl;

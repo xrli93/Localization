@@ -38,7 +38,7 @@ namespace Localization
         }
 
         // First level voting
-        int IdentifyImage(Mat img, double* quality = NULL)
+        int IdentifyImage(Mat img, double* quality = NULL, int ref = -1) // DEBUG: ref permit to check the output
         {
             Mat features = CalculateFeatures(img);
             vector<double> votes(NUM_ROOMS, 0);
@@ -58,12 +58,51 @@ namespace Localization
             {
                 quality = new double;
             }
-            return CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
+            int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
+            if (ref > 0 && result > -1 && result != ref) // wrong result
+            {
+                //ReducImage(img, features, result, ref); // Check features
+                ReducImage(features, ref);
+            }
+            return result;
         }
+
+        void ReducImage(Mat img, Mat& features, int result, int ref)
+        {
+            static int count = 0;
+            for (size_t i = 0; i < features.rows; i++)
+            {
+                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
+                vector<Word<Mat> *>::iterator iter;
+                for (iter = wordList.begin(); iter != wordList.end(); iter++)
+                {
+                    Word<Mat> *word = (*iter);
+                    if (word->GetLabels()[ref] != true)
+                    {
+                        cout << to_string(++count) << ", ";
+                        word->UpdateLabel(ref); // Learn image
+                    }
+                }
+            }
+        }
+
+        void ReducImage(Mat& features, int ref)
+        {
+            for (size_t i = 0; i < features.rows; i++)
+            {
+                mDict.AddFeature(features.row(i), ref);
+            }
+        }
+
 
         int CountFeatures()
         {
             return mFeatureCount;
+        }
+
+        void RemoveCommonWords()
+        {
+            mDict.RemoveCommonWords();
         }
 
         int CountWords()
@@ -74,6 +113,11 @@ namespace Localization
         int CountNodes()
         {
             return mDict.CountNodes();
+        }
+
+        vector<int> AnalyseDict()
+        {
+            return mDict.AnalyseWords();
         }
 
     };
@@ -171,6 +215,10 @@ namespace Localization
                 Mat hue = GetHue(img);
                 MatND hist;
                 calcHist(&hue, 1, 0, Mat(), hist, 1, &nBins, &histRanges, true, false);
+                if (ENABLE_HISTOGRAM_NORMALIZATION)
+                {
+                    normalize(hist, hist, 1, 0, NORM_L1, -1, Mat());
+                }
                 features.push_back(hist.t());
             }
             return features;
@@ -184,8 +232,7 @@ namespace Localization
             // Type 1: 40 x 40 every 20 pixels
             // Type 2: 20 x 20 every 10 pixels
             CalculateWindows(img, width, height, 80, 40, &imgWindows); // Type 1
-            //If two levels, rather slow
-            //CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
+            //CalculateWindows(img, width, height, 120, 40, &imgWindows); // Type 1
             return imgWindows;
         }
 

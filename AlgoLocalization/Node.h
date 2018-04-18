@@ -26,15 +26,6 @@ namespace Localization
 
         ~Node()
         {
-            //for (size_t i = 0; i < mWords.size(); i++)
-            //{
-            //    delete mWords[i];
-            //}
-
-            //for (size_t i = 0; i < mChildNodes.size(); i++)
-            //{
-            //    delete mChildNodes[i];
-            //}
             mChildNodes.clear();
             mWords.clear();
         }
@@ -44,17 +35,13 @@ namespace Localization
             mWords.push_back(word);
         }
 
+
         void RemoveWords()
         {
             while (!mWords.empty())
                 mWords.pop_back();
         }
         
-        void GiveParent()
-        {
-            hasParent = true;
-        }
-
 
         void AddChildNode(Node<T> *node)
         {
@@ -74,6 +61,14 @@ namespace Localization
         int GetChildCount() const
         {
             return mChildNodes.size();
+        }
+
+        // remove words present in all rooms
+        void RemoveCommonWords()
+        {
+           mWords.erase(remove_if(mWords.begin(), mWords.end(), 
+                [](Word<T>* pWord) {return pWord->PresentInAll(); }),
+               mWords.end());
         }
 
         // Sort child nodes according to their distances to a feature
@@ -100,6 +95,35 @@ namespace Localization
         {
             return (int)mWords.size();
         }
+
+        // Return a vector counting words according to their lables
+        // {0, 1, 2, 0 + 1, 0 + 2, 1 + 2, 0 + 1 + 2}
+        vector<int> AnalyseWords()
+        {
+            assert(NUM_ROOMS == 3);
+            vector<int> count(WORD_TYPES, 0);
+            vector<int> total(WORD_TYPES, 0);
+            for (size_t i = 0; i < mWords.size(); i++)
+            {
+                Word<T> *ptrWord = mWords[i];
+                vector<bool> labels = ptrWord->GetLabels();
+                bool salon = labels[SALON];
+                bool cuisine = labels[CUISINE];
+                bool reunion = labels[REUNION];
+
+                count[SALON] = (int)salon;
+                count[CUISINE] = (int)cuisine;
+                count[REUNION] = (int)reunion;
+                count[3] = (int)(salon && cuisine);
+                count[4] = (int)(salon && reunion);
+                count[5] = (int)(cuisine && reunion);
+                count[6] = (int)(salon && reunion && cuisine);
+                transform(total.begin(), total.end(), count.begin(), total.begin(), plus<int>());
+            }
+            return total;
+        }
+
+        
 
         T GetCenter() const
         {

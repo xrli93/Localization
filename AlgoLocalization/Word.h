@@ -20,6 +20,7 @@ namespace Localization
         T mCenter; // word center in feature space
         double mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
+        Node<T> * mNode; // Node which contains it
 
     private:
         void initMPresenceRooms()
@@ -66,6 +67,16 @@ namespace Localization
             mCenter = center;
         }
 
+        //void SetParentNode(Localization::Node<T>* ptrNode)
+        //{
+        //    mNode = ptrNode;
+        //}
+
+        vector<bool> GetLabels()
+        {
+            return mPresenceRooms;
+        }
+
         void UpdateLabel(int indexRoom)
         {
             if (indexRoom < NUM_ROOMS)
@@ -78,6 +89,12 @@ namespace Localization
         bool ContainFeature(T feature)
         {
             return (Localization::CalculateDistance(feature, mCenter) < mRadius) ? true : false;
+        }
+
+        bool PresentInAll()
+        {
+            return all_of(mPresenceRooms.begin(), mPresenceRooms.end(), 
+                [](bool x) {return x; }) ? true : false;
         }
 
         void Display()
@@ -98,6 +115,15 @@ namespace Localization
             {
                 roomsSeen += mPresenceRooms[i] ? 1 : 0;
             }
+            // DEBUG: Only unique words vote
+            //if (roomsSeen == 1)
+            //{
+            //    for (size_t i = 0; i < scores.size(); i++)
+            //    {
+            //        scores[i] = mPresenceRooms[i] ? 1 : 0;
+            //    }
+
+            //}
             if (roomsSeen > 0)
             {
                 for (size_t i = 0; i < scores.size(); i++)
@@ -159,8 +185,8 @@ namespace Localization
             //TODO: implement or find diffusion distance as mentioned in Filliat 08 [27]
             //return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
 
-            //cout << compareHist(x, y, CV_COMP_KL_DIV);
-            double dist = compareHist(x, y, CV_COMP_KL_DIV);
+            //double dist = compareHist(x, y, CV_COMP_KL_DIV);
+            double dist = DiffusionDistance(x, y, 0.8);
             //cout << dist << endl;
             return dist;  // lower the closer. CV_COMP_BHATTACHARYYA possible.
             

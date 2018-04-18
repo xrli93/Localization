@@ -11,9 +11,6 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/xfeatures2d.hpp"
-#define SALON 0
-#define CUISINE 1
-#define REUNION 2
 
 using namespace std;
 using namespace Localization;
@@ -169,7 +166,7 @@ public:
         for (size_t i = 0; i < nLearning; i++)
         {
             mLocalizer.LearnImage((*imgs)[i], label);
-            cout << i;
+            cout << i << ", ";
         }
         cout << endl;
     }
@@ -179,12 +176,28 @@ public:
         vector<int> wordsCount = mLocalizer.CountWords();
         vector<int> nodesCount = mLocalizer.CountNodes();
         vector<int> featuresCount = mLocalizer.CountFeatures();
+        vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(FEATURE_SIFT);
+        vector<int> ColorAnalysis = mLocalizer.AnalyseDict(FEATURE_COLOR);
         cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
         cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
         cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
+        cout << endl;
+        cout << "SIFT Dict analysis: " << endl;
+        for (auto i : SIFTAnalysis)
+        {
+            cout << setw(4) << i << ", ";
+        }
+        cout << endl << endl;
+
+        cout << "Color Dict analysis: " << endl;
+        for (auto i : ColorAnalysis)
+        {
+            cout << setw(4) << i << ", ";
+        }
+        cout << endl << endl;
     }
 
-    void ReportResults(vector<Mat>& imgs, int label, vector<double>* stats)
+    void ReportResults(vector<Mat>& imgs, int label, vector<double>* stats, int offset = 0)
     {
         int correct = 0;
         int unIdentified = 0;
@@ -195,13 +208,24 @@ public:
             vector<Mat> lImgs;
             for (size_t j = 0; j < nImgs; j++)
             {
-                Mat lImg = imgs[nLearning + i * nImgs + j];
+                Mat lImg = imgs[nLearning + offset + i * nImgs + j];
                 lImgs.push_back(lImg);
             }
 
             double quality = 0;
             auto t1 = std::chrono::high_resolution_clock::now();
-            int result = mLocalizer.IdentifyRoom(lImgs, &quality);
+            int result;
+            if (ENABLE_CORRECTION)
+            {
+                // modify words 
+                result = mLocalizer.IdentifyRoom(lImgs, &quality, VERBOSE, label);
+            }
+            else
+            {
+                // do nothing
+                result = mLocalizer.IdentifyRoom(lImgs, &quality, VERBOSE);
+            }
+
             //cout << "Room detected: " << result << " For " << i;
             if (result == label)
             {
@@ -224,12 +248,16 @@ public:
             //    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
             //    << " milliseconds\n" << endl;
         }
+        if (ENABLE_CORRECTION) 
+        {
+            mLocalizer.RemoveCommonWords();
+        }
         double percentCorrect = correct * 100.0 / nTest;
         double percentUnidentified = unIdentified * 100.0 / nTest;
 
-        cout << "Average timing: " << timings / nTest << endl;
-        cout << "Correct: " << percentCorrect << "%";
-        cout << "Unidentified: " << percentUnidentified << "%";
+        cout << "***********  Average timing: " << timings / nTest << endl;
+        cout << "***********  Correct: " << percentCorrect << "%" << endl;
+        cout << "* * * * * *  Unidentified: " << percentUnidentified << "%";
         cout << endl;
         (*stats)[label * 2] += percentCorrect;
         (*stats)[label * 2 + 1] += percentUnidentified;
@@ -244,7 +272,7 @@ public:
         //cv::addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
         return lImg;
     }
-    void Run(vector<double>* results)
+    void Run(vector<double>* results, bool enableCorrection)
     {
         stringstream ss;
         string filename;
@@ -271,10 +299,23 @@ public:
             Train(&reunionImgs, REUNION);
             cout << " Training done " << endl;
             ReportDict();
-            cout << endl;
+            cout << endl << endl;
+
             ReportResults(salonImgs, SALON, results);
             ReportResults(cuisineImgs, CUISINE, results);
             ReportResults(reunionImgs, REUNION, results);
+            ReportDict();
+            cout << endl << endl;
+
+            if (ENABLE_CORRECTION)
+            {
+                cout << "After Correction" << endl;
+                int offset = nTest * nImgs;
+                ReportResults(salonImgs, SALON, results, offset);
+                ReportResults(cuisineImgs, CUISINE, results, offset);
+                ReportResults(reunionImgs, REUNION, results, offset);
+                ReportDict();
+            }
         }
 
     }
@@ -347,18 +388,18 @@ void testLocalizer()
 int main() {
 
     int nExperiments = 3;
-    vector<double> stats(NUM_ROOMS * 2, 0);
+    vector<double> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
     for (size_t i = 0; i < nExperiments; i++)
     {
         cout << "---------------- Run " << i << " -----------------" << endl;
-        Tester mTester = Tester(40, 12, 3);
+        Tester mTester = Tester(40, 10, 2);
         //Tester mTester = Tester();
-        mTester.Run(&stats);
+        mTester.Run(&stats, ENABLE_CORRECTION);
     }
-
     for (size_t i = 0; i < stats.size(); i++)
     {
-        cout << stats[i] / nExperiments << ", ";
+        int factor = ENABLE_CORRECTION ? 2 : 1;
+        cout << stats[i] / nExperiments / factor << ", ";
     }
     //Mat myMat(1, 10, CV_8UC1);
     //randu(myMat, Scalar(0), Scalar(20));

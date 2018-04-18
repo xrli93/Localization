@@ -20,7 +20,7 @@ namespace Localization
         double mRadius = RADIUS;
         double mFrontier = RADIUS * 5;
         int mNMaxWords = NUM_MAX_WORDS;
-        // TODO: debug
+        // DEBUG
         int v1 = 0;
         int v2 = 0;
         int v12 = 0;
@@ -76,6 +76,11 @@ namespace Localization
             mFeatureMethod = featureMethod;
         }
 
+        string GetFeatureMethod()
+        {
+            return (mFeatureMethod == FEATURE_SIFT) ? "SIFT" : "Color";
+        }
+
         // Count words in dict
         int CountWords() { return CountWords(&mRootNode); }
 
@@ -105,6 +110,28 @@ namespace Localization
                 return node->GetWordsCount();
             }
         }
+        vector<int> AnalyseWords() { return AnalyseWords(&mRootNode); }
+
+        vector<int> AnalyseWords(Node<T>* node)
+        {
+            if (!node->IsLeafNode())
+            {
+                vector<int> total(WORD_TYPES, 0);
+                vector<Node<T> *> childList = node->GetChildNodes();
+                for (size_t i = 0; i < childList.size(); i++)
+                {
+                    Node<T> *lNode = childList[i];
+                    vector<int> lCount = AnalyseWords(lNode);
+                    transform(total.begin(), total.end(), lCount.begin(), total.begin(), plus<int>());
+                }
+                return total;
+            }
+            else
+            {
+                return node->AnalyseWords();
+            }
+        }
+
 
 
         // Count nodes in dict
@@ -128,7 +155,25 @@ namespace Localization
             {
                 return 1;
             }
+        }
 
+        void RemoveCommonWords() { RemoveCommonWords(&mRootNode); }
+
+        void RemoveCommonWords(Node<T>* node)
+        {
+            if (!node->IsLeafNode())
+            {
+                vector<Node<T> *> childList = node->GetChildNodes();
+                for (size_t i = 0; i < childList.size(); i++)
+                {
+                    Node<T> *lNode = childList[i];
+                    RemoveCommonWords(lNode);
+                }
+            }
+            else
+            {
+                node->RemoveCommonWords();
+            }
         }
 
         // Adds a new Word into the dict

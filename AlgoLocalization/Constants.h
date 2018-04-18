@@ -11,7 +11,9 @@
 // KL-DIVERGENCE
 
 #define RADIUS_SIFT 200
-#define RADIUS_COLOR 30
+#define RADIUS_COLOR 30 // Non-normalized
+#define ENABLE_HISTOGRAM_NORMALIZATION true
+#define RADIUS_COLOR 0.1
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
@@ -29,3 +31,12 @@
 #define FEATURE_SIFT 1
 #define FEATURE_COLOR 0
 
+
+#define SALON 0
+#define CUISINE 1
+#define REUNION 2
+
+#define WORD_TYPES 7
+#define VERBOSE false
+
+#define ENABLE_CORRECTION false
