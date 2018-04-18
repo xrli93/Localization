@@ -11,6 +11,9 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/xfeatures2d.hpp"
+#define SALON 0
+#define CUISINE 1
+#define REUNION 2
 
 using namespace std;
 using namespace Localization;
@@ -126,149 +129,157 @@ string GetFileName(string dir, int i)
     {
         filename = dir + "00" + Convert(i) + ".jpg";
     }
-    else
+    else if (i < 100)
     {
         filename = dir + "0" + Convert(i) + ".jpg";
+    }
+    else
+    {
+        filename = dir + Convert(i) + ".jpg";
     }
     return filename;
 }
 
-void readImages(Localizer* localizer)
+
+class Tester
 {
-    stringstream ss;
+public:
     string root = "C:\\Users\\Hoth\\Pictures\\Buddy\\";
     string salon = "C:\\Users\\Hoth\\Pictures\\Buddy\\salon\\";
     string cuisine = "C:\\Users\\Hoth\\Pictures\\Buddy\\cuisine\\";
     string reunion = "C:\\Users\\Hoth\\Pictures\\Buddy\\reunion\\";
-    string filename;
-    Mat img;
     vector<Mat> salonImgs;
     vector<Mat> cuisineImgs;
     vector<Mat> reunionImgs;
+    int nLearning = 40;
+    int nTest = 20;
+    int nImgs = 1;
+    int nExperiments = 1;
+    Localizer mLocalizer{};
+    Tester() {}
 
-    
-    for (size_t i = 1; i <= 100; i++)
+    Tester(int numLearning, int numTest, int numImgs) :
+        nLearning(numLearning), nTest(numTest), nImgs(numImgs) {}
+
+    void Train(vector<Mat>* imgs, int label)
     {
-        img = imread(GetFileName(salon, i), IMREAD_COLOR);
-        localizer->AddImage(img, 0);
-        img = imread(GetFileName(reunion, i), IMREAD_COLOR);
-        localizer->AddImage(img, 2);
-        cout << i;
-    }
-
-    for (size_t i = 1; i <= 90; i++)
-    {
-        img = imread(GetFileName(cuisine, i), IMREAD_COLOR);
-        localizer->AddImage(img, 1);
-        cout << i;
-    }
-    cout << endl;
-    localizer->LearnCollection();
-
-
-    vector<int> wordsCount = localizer->CountWords();
-    vector<int> nodesCount = localizer->CountNodes();
-    vector<int> featuresCount = localizer->CountFeatures();
-    cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
-    cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
-    cout << "features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
-
-
-    for (size_t i = nLearning + 1; i <= 23; i++)
-    {
-        img = imread(GetFileName(salon, i), IMREAD_COLOR);
-        Mat lImg = Mat(320, 240, CV_8UC1); // TODO
-        resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
-
-        auto t1 = std::chrono::high_resolution_clock::now();
-        vector<Mat> imgs;
-        imgs.push_back(lImg);
-        double quality = 0;
-        int result = localizer->IdentifyRoom(imgs, &quality);
-        cout << "Room detected: " << result  << " For " << i;
-        if (result == 0)
+        srand(time(0));
+        random_shuffle(imgs->begin(), imgs->end());
+        cout << "Training No. ";
+        for (size_t i = 0; i < nLearning; i++)
         {
-            cout << "Correct";
-        }
-        else if (result == -1)
-        {
-            cout << "Unidentified";
-        }
-        else
-        {
-            cout << "Wrong";
+            mLocalizer.LearnImage((*imgs)[i], label);
+            cout << i;
         }
         cout << endl;
-
-        auto t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "took "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            << " milliseconds\n";
     }
 
-    for (size_t i = nLearning + 1; i <= 23; i++)
+    void ReportDict()
     {
+        vector<int> wordsCount = mLocalizer.CountWords();
+        vector<int> nodesCount = mLocalizer.CountNodes();
+        vector<int> featuresCount = mLocalizer.CountFeatures();
+        cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
+        cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
+        cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
+    }
 
-        img = imread(GetFileName(cuisine, i), IMREAD_COLOR);
-        Mat lImg = Mat(320, 240, CV_8UC1); // TODO
+    void ReportResults(vector<Mat>& imgs, int label, vector<double>* stats)
+    {
+        int correct = 0;
+        int unIdentified = 0;
+        //for (size_t i = nLearning; i < nLearning + nTest; i++)
+        double timings = 0;
+        for (size_t i = 0; i < nTest; i++)
+        {
+            vector<Mat> lImgs;
+            for (size_t j = 0; j < nImgs; j++)
+            {
+                Mat lImg = imgs[nLearning + i * nImgs + j];
+                lImgs.push_back(lImg);
+            }
+
+            double quality = 0;
+            auto t1 = std::chrono::high_resolution_clock::now();
+            int result = mLocalizer.IdentifyRoom(lImgs, &quality);
+            //cout << "Room detected: " << result << " For " << i;
+            if (result == label)
+            {
+                //cout << "Correct";
+                correct++;
+            }
+            else if (result == -1)
+            {
+                //cout << "Unidentified";
+                unIdentified++;
+            }
+            else
+            {
+                //cout << "Wrong";
+            }
+
+            auto t2 = std::chrono::high_resolution_clock::now();
+            timings += (double)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            //std::cout << "took "
+            //    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            //    << " milliseconds\n" << endl;
+        }
+        double percentCorrect = correct * 100.0 / nTest;
+        double percentUnidentified = unIdentified * 100.0 / nTest;
+
+        cout << "Average timing: " << timings / nTest << endl;
+        cout << "Correct: " << percentCorrect << "%";
+        cout << "Unidentified: " << percentUnidentified << "%";
+        cout << endl;
+        (*stats)[label * 2] += percentCorrect;
+        (*stats)[label * 2 + 1] += percentUnidentified;
+    }
+
+    Mat Resize(Mat img)
+    {
+        Mat lImg = Mat(240, 320, CV_8UC1);
         resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
 
-        auto t1 = std::chrono::high_resolution_clock::now();
-        vector<Mat> imgs;
-        imgs.push_back(lImg);
-        double quality = 0;
-        int result = localizer->IdentifyRoom(imgs, &quality);
-        cout << "Room detected: " << result  << " For " << i;
-        if (result == 1)
-        {
-            cout << "Correct";
-        }
-        else if (result == -1)
-        {
-            cout << "Unidentified";
-        }
-        else
-        {
-            cout << "Wrong";
-        }
-        cout << endl;
+        //cv::GaussianBlur(lImg, lImg, cv::Size(0, 0), 3);
+        //cv::addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
+        return lImg;
+    }
+    void Run(vector<double>* results)
+    {
+        stringstream ss;
+        string filename;
+        Mat img;
 
-        auto t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "took "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            << " milliseconds\n";
+        for (size_t i = 1; i <= 90; i++)
+        {
+            salonImgs.push_back(Resize(imread(GetFileName(salon, i), IMREAD_COLOR)));
+            reunionImgs.push_back(Resize(imread(GetFileName(reunion, i), IMREAD_COLOR)));
+            if (i <= 85)
+            {
+                //imshow("sdfsdf", Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
+                //waitKey(100);
+                cuisineImgs.push_back(Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
+            }
+        }
+        cout << "Read all imgs" << endl;
+        for (size_t i = 0; i < nExperiments; i++)
+        {
+            Train(&salonImgs, SALON);
+            ReportDict();
+            Train(&cuisineImgs, CUISINE);
+            ReportDict();
+            Train(&reunionImgs, REUNION);
+            cout << " Training done " << endl;
+            ReportDict();
+            cout << endl;
+            ReportResults(salonImgs, SALON, results);
+            ReportResults(cuisineImgs, CUISINE, results);
+            ReportResults(reunionImgs, REUNION, results);
+        }
+
     }
 
-
-    //string imgNumber = "";
-    //while (true)
-    //{
-    //    imgs.clear();
-    //    cout << endl;
-    //    while (true)
-    //    {
-    //        cout << "Enter image name, 0 to end " << endl;
-    //        cin >> imgNumber;
-    //        if (imgNumber.compare("0") == 0)
-    //        {
-    //            break;
-    //        }
-    //        else
-    //        {
-    //            imgs.push_back(imread(root + imgNumber + ".jpg", IMREAD_COLOR));
-    //        }
-    //    }
-
-    //    t1 = std::chrono::high_resolution_clock::now();
-    //    cout << "Room detected: " << localizer->IdentifyRoom(imgs, &quality);
-    //    cout << " with quality " << quality << endl;
-
-    //    t2 = std::chrono::high_resolution_clock::now();
-    //    std::cout << "took "
-    //        << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-    //        << " milliseconds\n";
-    //}
-}
+};
 
 void testLocalizer()
 {
@@ -335,8 +346,26 @@ void testLocalizer()
 }
 int main() {
 
-    Localizer localizer = Localizer();
-    readImages(&localizer);
+    int nExperiments = 3;
+    vector<double> stats(NUM_ROOMS * 2, 0);
+    for (size_t i = 0; i < nExperiments; i++)
+    {
+        cout << "---------------- Run " << i << " -----------------" << endl;
+        Tester mTester = Tester(40, 12, 3);
+        //Tester mTester = Tester();
+        mTester.Run(&stats);
+    }
+
+    for (size_t i = 0; i < stats.size(); i++)
+    {
+        cout << stats[i] / nExperiments << ", ";
+    }
+    //Mat myMat(1, 10, CV_8UC1);
+    //randu(myMat, Scalar(0), Scalar(20));
+    //cout << myMat << endl;
+    //Mat out;
+    //GaussianBlur(myMat, out, Size(0,0), 5);
+    //cout << out;
 
 
     std::cin.get();

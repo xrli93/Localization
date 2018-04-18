@@ -23,6 +23,7 @@ namespace Localization
         //virtual int IdentifyImage(Mat img) = 0;
         void LearnImage(Mat img, int label)
         {
+
             Mat features = CalculateFeatures(img);
             // Set origin node to zero
             Mat origin = Mat(1, features.cols, CV_32FC1, Scalar(0.));
@@ -117,13 +118,22 @@ namespace Localization
 
         Mat CalculateFeatures(const Mat& img)
         {
-            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(1000, 3, 0.03, 10, 1.6);
+
+            Mat lImg(img);
+            cvtColor(img, lImg, COLOR_BGR2GRAY);
+            if (ENABLE_EQUALIZER)
+            {
+                equalizeHist(lImg, lImg);
+            }
+            //imshow("dfd", lImg);
+            //waitKey(100);
+            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(1000, 4, 0.03, 10, 1.6);
 
             std::vector<KeyPoint> keypoints;
-            f2d->detect(img, keypoints);
+            f2d->detect(lImg, keypoints);
 
             Mat descriptors;
-            f2d->compute(img, keypoints, descriptors);
+            f2d->compute(lImg, keypoints, descriptors);
             return descriptors;
         }
 
@@ -173,9 +183,9 @@ namespace Localization
             int height = img.rows;
             // Type 1: 40 x 40 every 20 pixels
             // Type 2: 20 x 20 every 10 pixels
-            CalculateWindows(img, width, height, 40, 20, &imgWindows); // Type 1
+            CalculateWindows(img, width, height, 80, 40, &imgWindows); // Type 1
             //If two levels, rather slow
-            CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
+            //CalculateWindows(img, width, height, 20, 10, &imgWindows); // Type 2
             return imgWindows;
         }
 

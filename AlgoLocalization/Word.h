@@ -8,7 +8,7 @@
 #include "opencv2/imgproc.hpp"
 
 using namespace std;
-
+using namespace cv;
 
 namespace Localization
 {
@@ -84,8 +84,9 @@ namespace Localization
         {
             for (int i = 0; i < NUM_ROOMS; i++)
             {
-                cout << mPresenceRooms[i] << endl;
+                cout << mPresenceRooms[i];
             }
+            cout << endl;
         }
 
         // Vote using inverse document frequency 
@@ -108,6 +109,20 @@ namespace Localization
         }
 
     };
+
+    double DiffusionDistance(const Mat& x, const Mat& y, double sigma = 1.6)
+    {
+        Mat d = x - y;
+        double dist = 0;
+        dist += norm(d, NORM_L1);
+        while (d.cols > 1)
+        {
+            GaussianBlur(d, d, Size(0, 0), sigma);
+            resize(d, d, Size(), 0.5, 1, INTER_NEAREST);
+            dist += norm(d, NORM_L1);
+        }
+        return dist;
+    }
 
     template <class T>
     double CalculateDistance(const T& x, const T& y) {}
@@ -133,24 +148,24 @@ namespace Localization
     {
         if (x.cols == DIM_SIFT) //  Sift features
         {
-            return cv::norm(x - y, cv::NORM_L2);
+            //cout << compareHist(x, y, CV_COMP_KL_DIV);
+            //return compareHist(x, y, CV_COMP_KL_DIV);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
+            double dist = norm(x - y, NORM_L2);
+            //cout << dist << endl;
+            return dist;
         }
         else if (x.cols == DIM_COLOR_HIST)
         {
             //TODO: implement or find diffusion distance as mentioned in Filliat 08 [27]
-            return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
+            //return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
+
+            //cout << compareHist(x, y, CV_COMP_KL_DIV);
+            double dist = compareHist(x, y, CV_COMP_KL_DIV);
+            //cout << dist << endl;
+            return dist;  // lower the closer. CV_COMP_BHATTACHARYYA possible.
+            
         }
     }
 
-    
 }
 
-//class WordSIFT : public Word<Mat>
-//{
-//public:
-//	double CalculateDistance(Mat x, Mat y)
-//	{
-//		return 0;
-//	}
-//};
-//

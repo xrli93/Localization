@@ -20,7 +20,10 @@ namespace Localization
         double mRadius = RADIUS;
         double mFrontier = RADIUS * 5;
         int mNMaxWords = NUM_MAX_WORDS;
-
+        // TODO: debug
+        int v1 = 0;
+        int v2 = 0;
+        int v12 = 0;
     public:
         TreeDict()
         {
@@ -75,6 +78,7 @@ namespace Localization
 
         // Count words in dict
         int CountWords() { return CountWords(&mRootNode); }
+
         int CountWords(Node<T>* node)
         {
             if (!node->IsLeafNode())
@@ -85,15 +89,23 @@ namespace Localization
                 {
                     Node<T> *lNode = childList[i];
                     sumWords += CountWords(lNode);
+                    //vector<Word<T> *> wordList = lNode->GetWords();
+                    //for (size_t i = 0; i < wordList.size(); i++)
+                    //{
+                    //    if (mFeatureMethod == FEATURE_SIFT)
+                    //    {
+                    //        wordList[i]->Display();
+                    //    }
+                    //}
                 }
                 return sumWords;
-
             }
             else
             {
                 return node->GetWordsCount();
             }
         }
+
 
         // Count nodes in dict
 
