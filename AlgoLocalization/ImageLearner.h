@@ -86,6 +86,7 @@ namespace Localization
             }
         }
 
+        // Actually can directly use this function....
         void ReducImage(Mat& features, int ref)
         {
             for (size_t i = 0; i < features.rows; i++)
@@ -150,7 +151,6 @@ namespace Localization
         {
             mDict.SetFeatureMethod(FEATURE_SIFT);
             mDict.SetRadius();
-            mDict.SetFrontier();
         }
 
         SIFTImageLearner(double radius)
@@ -171,7 +171,7 @@ namespace Localization
             }
             //imshow("dfd", lImg);
             //waitKey(100);
-            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(1000, 4, 0.03, 10, 1.6);
+            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
 
             std::vector<KeyPoint> keypoints;
             f2d->detect(lImg, keypoints);
@@ -191,7 +191,6 @@ namespace Localization
         {
             mDict.SetFeatureMethod(FEATURE_COLOR);
             mDict.SetRadius();
-            mDict.SetFrontier();
         }
         Mat GetHue(const Mat& img)
         {

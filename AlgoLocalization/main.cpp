@@ -142,6 +142,7 @@ class Tester
 {
 public:
     string root = "C:\\Users\\Hoth\\Pictures\\Buddy\\";
+    string video = "C:\\Users\\Hoth\\Pictures\\Videos\\";
     string salon = "C:\\Users\\Hoth\\Pictures\\Buddy\\salon\\";
     string cuisine = "C:\\Users\\Hoth\\Pictures\\Buddy\\cuisine\\";
     string reunion = "C:\\Users\\Hoth\\Pictures\\Buddy\\reunion\\";
@@ -229,17 +230,18 @@ public:
             //cout << "Room detected: " << result << " For " << i;
             if (result == label)
             {
-                //cout << "Correct";
+                cout << ((VERBOSE) ? "**** Correct **** \n" : "");
+                //cout << "correct" << endl;
                 correct++;
             }
             else if (result == -1)
             {
-                //cout << "Unidentified";
+                cout << ((VERBOSE) ? "**** Unidentified **** \n" : "");
                 unIdentified++;
             }
             else
             {
-                //cout << "Wrong";
+                cout << ((VERBOSE) ? "**** Wrong **** \n" : "");
             }
 
             auto t2 = std::chrono::high_resolution_clock::now();
@@ -248,7 +250,7 @@ public:
             //    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
             //    << " milliseconds\n" << endl;
         }
-        if (ENABLE_CORRECTION) 
+        if (ENABLE_CORRECTION)
         {
             mLocalizer.RemoveCommonWords();
         }
@@ -256,7 +258,7 @@ public:
         double percentUnidentified = unIdentified * 100.0 / nTest;
 
         cout << "***********  Average timing: " << timings / nTest << endl;
-        cout << "***********  Correct: " << percentCorrect << "%" << endl;
+        cout << "** ** ** **  Correct: " << percentCorrect << "%" << endl;
         cout << "* * * * * *  Unidentified: " << percentUnidentified << "%";
         cout << endl;
         (*stats)[label * 2] += percentCorrect;
@@ -272,23 +274,36 @@ public:
         //cv::addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
         return lImg;
     }
-    void Run(vector<double>* results, bool enableCorrection)
+    void ReadVideoImages()
+    {
+        for (size_t i = 1; i <= VIDEO_SIZE; i++)
+        {
+            salonImgs.push_back(imread(video + "salon\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            cuisineImgs.push_back(imread(video + "cuisine\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            reunionImgs.push_back(imread(video + "reunion\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+        }
+    }
+    void Run(vector<double>* results, bool enableCorrection, vector<double>* secondResults)
     {
         stringstream ss;
         string filename;
         Mat img;
 
-        for (size_t i = 1; i <= 90; i++)
-        {
-            salonImgs.push_back(Resize(imread(GetFileName(salon, i), IMREAD_COLOR)));
-            reunionImgs.push_back(Resize(imread(GetFileName(reunion, i), IMREAD_COLOR)));
-            if (i <= 85)
-            {
-                //imshow("sdfsdf", Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
-                //waitKey(100);
-                cuisineImgs.push_back(Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
-            }
-        }
+        ReadVideoImages();
+        // First database
+        //for (size_t i = 1; i <= 90; i++) 
+        //{
+        //    salonImgs.push_back(Resize(imread(GetFileName(salon, i), IMREAD_COLOR)));
+        //    reunionImgs.push_back(Resize(imread(GetFileName(reunion, i), IMREAD_COLOR)));
+        //    if (i <= 85)
+        //    {
+        //        //imshow("sdfsdf", Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
+        //        //waitKey(100);
+        //        cuisineImgs.push_back(Resize(imread(GetFileName(cuisine, i), IMREAD_COLOR)));
+        //    }
+        //}
+
+
         cout << "Read all imgs" << endl;
         for (size_t i = 0; i < nExperiments; i++)
         {
@@ -311,9 +326,9 @@ public:
             {
                 cout << "After Correction" << endl;
                 int offset = nTest * nImgs;
-                ReportResults(salonImgs, SALON, results, offset);
-                ReportResults(cuisineImgs, CUISINE, results, offset);
-                ReportResults(reunionImgs, REUNION, results, offset);
+                ReportResults(salonImgs, SALON, secondResults, offset);
+                ReportResults(cuisineImgs, CUISINE, secondResults, offset);
+                ReportResults(reunionImgs, REUNION, secondResults, offset);
                 ReportDict();
             }
         }
@@ -387,19 +402,30 @@ void testLocalizer()
 }
 int main() {
 
-    int nExperiments = 3;
+    int nExperiments = N_EXPERIMENTS;
     vector<double> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+    vector<double> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
     for (size_t i = 0; i < nExperiments; i++)
     {
         cout << "---------------- Run " << i << " -----------------" << endl;
-        Tester mTester = Tester(40, 10, 2);
+        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
         //Tester mTester = Tester();
-        mTester.Run(&stats, ENABLE_CORRECTION);
+        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
     }
+
+    cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
     for (size_t i = 0; i < stats.size(); i++)
     {
-        int factor = ENABLE_CORRECTION ? 2 : 1;
-        cout << stats[i] / nExperiments / factor << ", ";
+        cout << stats[i] / nExperiments << ", ";
+    }
+    cout << endl;
+    if (ENABLE_CORRECTION)
+    {
+        cout << "Percentage for correct and unidentified in 3 rooms after correction " << endl;
+        for (size_t i = 0; i < stats.size(); i++)
+        {
+            cout << correctStats[i] / nExperiments << ", ";
+        }
     }
     //Mat myMat(1, 10, CV_8UC1);
     //randu(myMat, Scalar(0), Scalar(20));
@@ -407,7 +433,6 @@ int main() {
     //Mat out;
     //GaussianBlur(myMat, out, Size(0,0), 5);
     //cout << out;
-
 
     std::cin.get();
     return 0;

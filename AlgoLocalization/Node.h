@@ -17,6 +17,8 @@ namespace Localization
         T mCenter{};
         std::vector<Node<T> *> mChildNodes;
         std::vector<Word<T> *> mWords;
+        double mFrontier = 0; // TODO: change this when 1. Add new word to node (in this case notify parent also) 2. Add node to parent node
+        Node<T>* mParent = nullptr;
     public:
         Node()
         {
@@ -33,19 +35,46 @@ namespace Localization
         void AddWord(Word<T> *word)
         {
             mWords.push_back(word);
+            //mFrontier = CalculateDistance(word->GetCenter(), mCenter); // for Search
+            //UpdateFrontier(mParent, mFrontier);
+            UpdateFrontier(this, CalculateDistance(word->GetCenter(), mCenter));
         }
 
-
-        void RemoveWords()
+        void UpdateFrontier(Node<T>* node, double newFrontier)
         {
-            while (!mWords.empty())
-                mWords.pop_back();
+            if (newFrontier > node->mFrontier)
+            {
+                node->mFrontier = newFrontier;
+            }
+            Node<T>* parent = node->mParent;
+            while (parent != nullptr)
+            {
+                UpdateFrontier(parent, newFrontier + CalculateDistance(parent->GetCenter(), node->GetCenter()));
+                parent = parent->GetParent();
+            }
         }
-        
 
         void AddChildNode(Node<T> *node)
         {
             mChildNodes.push_back(node);
+            node->SetParent(this);
+            UpdateFrontier(this, node->GetFrontier() + CalculateDistance(mCenter, node->GetCenter())); // Frontier ~= dist(this, child) + dist(child, feature) TODO: explore approx
+        }
+
+        void RemoveWords() // TODO: Change frontier?
+        {
+            while (!mWords.empty())
+                mWords.pop_back();
+        }
+
+        void SetParent(Node<T> *parent)
+        {
+            mParent = parent;
+        }
+
+        Node<T>* GetParent()
+        {
+            return mParent;
         }
 
         vector<Word<T> *> GetWords() const
@@ -58,6 +87,12 @@ namespace Localization
             return mChildNodes;
         }
 
+        double GetFrontier()
+        {
+            return mFrontier;
+        }
+
+
         int GetChildCount() const
         {
             return mChildNodes.size();
@@ -66,9 +101,9 @@ namespace Localization
         // remove words present in all rooms
         void RemoveCommonWords()
         {
-           mWords.erase(remove_if(mWords.begin(), mWords.end(), 
+            mWords.erase(remove_if(mWords.begin(), mWords.end(),
                 [](Word<T>* pWord) {return pWord->PresentInAll(); }),
-               mWords.end());
+                mWords.end());
         }
 
         // Sort child nodes according to their distances to a feature
@@ -123,7 +158,7 @@ namespace Localization
             return total;
         }
 
-        
+
 
         T GetCenter() const
         {

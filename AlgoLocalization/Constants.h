@@ -2,18 +2,27 @@
 
 // Hyperparameters for tuning
 #define RADIUS 50.0
+#define N_LEARNING 80
+#define N_TEST 30
+#define N_IMGS 2
+#define N_EXPERIMENTS 3
 // L2 + CHI SQUARES
 //#define RADIUS_SIFT 80.0
 //#define RADIUS_COLOR 16
 //#define FRONTIER_SIFT 6000
 //#define FRONTIER_COLOR 500
 
-// KL-DIVERGENCE
+
+// RADIUS_SIFT for different norms: L2 ~ 200, CHI_Squares ~ 700, 
+// RADIUS_COLOR for non-normalized: 30 ~ 50, normalized Diffusion ~ 0.03
+
 
 #define RADIUS_SIFT 200
-#define RADIUS_COLOR 30 // Non-normalized
-#define ENABLE_HISTOGRAM_NORMALIZATION true
-#define RADIUS_COLOR 0.1
+#define ENABLE_HISTOGRAM_NORMALIZATION false
+#define RADIUS_COLOR 30
+//#define RADIUS_COLOR 0.025
+
+#define NUM_MAX_SIFT 250
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
@@ -30,7 +39,7 @@
 #define DIM_SIFT 128
 #define FEATURE_SIFT 1
 #define FEATURE_COLOR 0
-
+#define VIDEO_SIZE 250
 
 #define SALON 0
 #define CUISINE 1
@@ -39,4 +48,9 @@
 #define WORD_TYPES 7
 #define VERBOSE false
 
-#define ENABLE_CORRECTION false
+#define ENABLE_CORRECTION true
+
+#define NORM_KL 0
+#define NORM_DIFFUSION 1
+const int mNorm = NORM_KL;
+#define DISP_DEBUG false

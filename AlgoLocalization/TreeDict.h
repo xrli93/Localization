@@ -18,7 +18,7 @@ namespace Localization
         Node<T> mRootNode{};
         int mFeatureMethod;
         double mRadius = RADIUS;
-        double mFrontier = RADIUS * 5;
+        //double mFrontier = RADIUS * 5;
         int mNMaxWords = NUM_MAX_WORDS;
         // DEBUG
         int v1 = 0;
@@ -61,10 +61,6 @@ namespace Localization
             mRadius = (mFeatureMethod == FEATURE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
         }
 
-        void SetFrontier()
-        {
-            mFrontier = (mFeatureMethod == FEATURE_COLOR) ? FRONTIER_COLOR : FRONTIER_SIFT;
-        }
 
         void SetNMaxWords(int nMaxWords)
         {
@@ -245,7 +241,8 @@ namespace Localization
                         vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
                     }
-                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < mFrontier)
+                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < FRONTIER_SIFT)
+                    //else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < lNode->GetFrontier() + mRadius)
                     {
                         vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
@@ -255,6 +252,7 @@ namespace Localization
             }
             return wordList;
         }
+
 
 
         // Find in dict the leaf node whose center is nearest to feature (for insertion)

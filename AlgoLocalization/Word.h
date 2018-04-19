@@ -93,7 +93,7 @@ namespace Localization
 
         bool PresentInAll()
         {
-            return all_of(mPresenceRooms.begin(), mPresenceRooms.end(), 
+            return all_of(mPresenceRooms.begin(), mPresenceRooms.end(),
                 [](bool x) {return x; }) ? true : false;
         }
 
@@ -175,9 +175,12 @@ namespace Localization
         if (x.cols == DIM_SIFT) //  Sift features
         {
             //cout << compareHist(x, y, CV_COMP_KL_DIV);
-            //return compareHist(x, y, CV_COMP_KL_DIV);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
             double dist = norm(x - y, NORM_L2);
-            //cout << dist << endl;
+            //double dist = compareHist(x, y, CV_COMP_CHISQR);
+            if (DISP_DEBUG)
+            {
+                cout << dist << endl;
+            }
             return dist;
         }
         else if (x.cols == DIM_COLOR_HIST)
@@ -185,11 +188,11 @@ namespace Localization
             //TODO: implement or find diffusion distance as mentioned in Filliat 08 [27]
             //return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
 
-            //double dist = compareHist(x, y, CV_COMP_KL_DIV);
-            double dist = DiffusionDistance(x, y, 0.8);
+            double dist = (mNorm == NORM_KL) ? compareHist(x, y, CV_COMP_KL_DIV) : DiffusionDistance(x, y, 1.0);
+            //double dist = DiffusionDistance(x, y, 1.2);
             //cout << dist << endl;
             return dist;  // lower the closer. CV_COMP_BHATTACHARYYA possible.
-            
+
         }
     }
 
