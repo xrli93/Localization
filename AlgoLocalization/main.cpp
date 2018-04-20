@@ -149,6 +149,9 @@ public:
     vector<Mat> salonImgs;
     vector<Mat> cuisineImgs;
     vector<Mat> reunionImgs;
+    vector<Mat> salonTest;
+    vector<Mat> cuisineTest;
+    vector<Mat> reunionTest;
     int nLearning = 40;
     int nTest = 20;
     int nImgs = 1;
@@ -161,8 +164,8 @@ public:
 
     void Train(vector<Mat>* imgs, int label)
     {
-        srand(time(0));
-        random_shuffle(imgs->begin(), imgs->end());
+        //srand(time(0));
+        //random_shuffle(imgs->begin(), imgs->end());
         cout << "Training No. ";
         for (size_t i = 0; i < nLearning; i++)
         {
@@ -200,6 +203,8 @@ public:
 
     void ReportResults(vector<Mat>& imgs, int label, vector<double>* stats, int offset = 0)
     {
+        srand(time(0));
+        random_shuffle(imgs.begin(), imgs.end());
         int correct = 0;
         int unIdentified = 0;
         //for (size_t i = nLearning; i < nLearning + nTest; i++)
@@ -209,7 +214,7 @@ public:
             vector<Mat> lImgs;
             for (size_t j = 0; j < nImgs; j++)
             {
-                Mat lImg = imgs[nLearning + offset + i * nImgs + j];
+                Mat lImg = imgs[offset + i * nImgs + j];
                 lImgs.push_back(lImg);
             }
 
@@ -276,11 +281,17 @@ public:
     }
     void ReadVideoImages()
     {
+        for (size_t i = 1; i <= TRAIN_SIZE; i++)
+        {
+            salonImgs.push_back(imread(video + "salon_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            cuisineImgs.push_back(imread(video + "cuisine_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            reunionImgs.push_back(imread(video + "reunion_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+        }
         for (size_t i = 1; i <= VIDEO_SIZE; i++)
         {
-            salonImgs.push_back(imread(video + "salon\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            cuisineImgs.push_back(imread(video + "cuisine\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            reunionImgs.push_back(imread(video + "reunion\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            salonTest.push_back(imread(video + "salon_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            cuisineTest.push_back(imread(video + "cuisine_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            reunionTest.push_back(imread(video + "reunion_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
         }
     }
     void Run(vector<double>* results, bool enableCorrection, vector<double>* secondResults)
@@ -316,9 +327,9 @@ public:
             ReportDict();
             cout << endl << endl;
 
-            ReportResults(salonImgs, SALON, results);
-            ReportResults(cuisineImgs, CUISINE, results);
-            ReportResults(reunionImgs, REUNION, results);
+            ReportResults(salonTest, SALON, results);
+            ReportResults(cuisineTest, CUISINE, results);
+            ReportResults(reunionTest, REUNION, results);
             ReportDict();
             cout << endl << endl;
 
@@ -326,9 +337,9 @@ public:
             {
                 cout << "After Correction" << endl;
                 int offset = nTest * nImgs;
-                ReportResults(salonImgs, SALON, secondResults, offset);
-                ReportResults(cuisineImgs, CUISINE, secondResults, offset);
-                ReportResults(reunionImgs, REUNION, secondResults, offset);
+                ReportResults(salonTest, SALON, secondResults, offset);
+                ReportResults(cuisineTest, CUISINE, secondResults, offset);
+                ReportResults(reunionTest, REUNION, secondResults, offset);
                 ReportDict();
             }
         }
@@ -407,7 +418,7 @@ int main() {
     vector<double> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
     for (size_t i = 0; i < nExperiments; i++)
     {
-        cout << "---------------- Run " << i << " -----------------" << endl;
+        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
         Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
         //Tester mTester = Tester();
         mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);

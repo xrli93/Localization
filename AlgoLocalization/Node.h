@@ -35,9 +35,7 @@ namespace Localization
         void AddWord(Word<T> *word)
         {
             mWords.push_back(word);
-            //mFrontier = CalculateDistance(word->GetCenter(), mCenter); // for Search
-            //UpdateFrontier(mParent, mFrontier);
-            UpdateFrontier(this, CalculateDistance(word->GetCenter(), mCenter));
+            //UpdateFrontier(this, CalculateDistance(word->GetCenter(), mCenter));
         }
 
         void UpdateFrontier(Node<T>* node, double newFrontier)
@@ -57,8 +55,8 @@ namespace Localization
         void AddChildNode(Node<T> *node)
         {
             mChildNodes.push_back(node);
-            node->SetParent(this);
-            UpdateFrontier(this, node->GetFrontier() + CalculateDistance(mCenter, node->GetCenter())); // Frontier ~= dist(this, child) + dist(child, feature) TODO: explore approx
+            //node->SetParent(this);
+            //UpdateFrontier(this, node->GetFrontier() + CalculateDistance(mCenter, node->GetCenter())); // Frontier ~= dist(this, child) + dist(child, feature) TODO: explore approx
         }
 
         void RemoveWords() // TODO: Change frontier?

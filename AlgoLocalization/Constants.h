@@ -2,10 +2,6 @@
 
 // Hyperparameters for tuning
 #define RADIUS 50.0
-#define N_LEARNING 80
-#define N_TEST 30
-#define N_IMGS 2
-#define N_EXPERIMENTS 3
 // L2 + CHI SQUARES
 //#define RADIUS_SIFT 80.0
 //#define RADIUS_COLOR 16
@@ -39,7 +35,8 @@
 #define DIM_SIFT 128
 #define FEATURE_SIFT 1
 #define FEATURE_COLOR 0
-#define VIDEO_SIZE 250
+#define VIDEO_SIZE 50
+#define TRAIN_SIZE 25
 
 #define SALON 0
 #define CUISINE 1
@@ -48,9 +45,14 @@
 #define WORD_TYPES 7
 #define VERBOSE false
 
-#define ENABLE_CORRECTION true
+#define ENABLE_CORRECTION false
 
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
 const int mNorm = NORM_KL;
 #define DISP_DEBUG false
+
+#define N_LEARNING TRAIN_SIZE
+#define N_TEST 25
+#define N_IMGS 2
+#define N_EXPERIMENTS 3
