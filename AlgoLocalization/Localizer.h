@@ -28,7 +28,7 @@ namespace Localization
         ~Localizer() { };
         vector<int> AnalyseDict(int featureMethod)
         {
-            return (featureMethod == FEATURE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
+            return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
         }
 
         vector<int> CountWords()
@@ -107,12 +107,9 @@ namespace Localization
                     }
                     secondVotes[SIFTVote] += 1;
                 }
-                else
+                else if (verbose)
                 {
-                    if (verbose)
-                    {
-                        cout << "SIFT not voting" << endl;
-                    }
+                    cout << "SIFT not voting" << endl;
                 }
 
                 if (ColorVote > -1)
@@ -121,15 +118,12 @@ namespace Localization
                     {
                         cout << "Color voting" << ColorVote << endl;
                     }
-                    secondVotes[ColorVote] += 1;
+                    // SIFT Important
+                    secondVotes[ColorVote] += 1 * WEIGHT_COLOR;
                 }
-                else
+                else if (verbose)
                 {
-
-                    if (verbose)
-                    {
-                        cout << "Color not voting" << endl;
-                    }
+                    cout << "Color not voting" << endl;
                 }
 
                 // SIFT important

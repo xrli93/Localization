@@ -58,7 +58,7 @@ namespace Localization
         }
         void SetRadius()
         {
-            mRadius = (mFeatureMethod == FEATURE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
+            mRadius = (mFeatureMethod == USE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
         }
 
 
@@ -74,7 +74,7 @@ namespace Localization
 
         string GetFeatureMethod()
         {
-            return (mFeatureMethod == FEATURE_SIFT) ? "SIFT" : "Color";
+            return (mFeatureMethod == USE_SIFT) ? "SIFT" : "Color";
         }
 
         // Count words in dict
@@ -90,14 +90,6 @@ namespace Localization
                 {
                     Node<T> *lNode = childList[i];
                     sumWords += CountWords(lNode);
-                    //vector<Word<T> *> wordList = lNode->GetWords();
-                    //for (size_t i = 0; i < wordList.size(); i++)
-                    //{
-                    //    if (mFeatureMethod == FEATURE_SIFT)
-                    //    {
-                    //        wordList[i]->Display();
-                    //    }
-                    //}
                 }
                 return sumWords;
             }
@@ -184,7 +176,9 @@ namespace Localization
         // Add a feature to the dict
         void AddFeature(T feature, int indexRoom)
         {
-            vector<Word<T> *> wordList = Search(feature, MAX_CHILD_NUM, FULL_SEARCH);
+            //bool enableFullSearch = (mFeatureMethod == USE_SIFT) ? false : true;
+            bool enableFullSearch = true;
+            vector<Word<T> *> wordList = Search(feature, enableFullSearch);
             if (!wordList.empty())
             {
                 typename vector<Word<T> *>::iterator iter;
@@ -197,7 +191,6 @@ namespace Localization
             {
                 Word<T> *newWord = new Word<T>(feature, indexRoom, mRadius);
                 Node<T> *node = AddWordToDict(newWord);
-
                 if (node->GetWordsCount() > mNMaxWords) // Many words necessary to create new nodes
                 {
                     Expand(node);
@@ -208,11 +201,11 @@ namespace Localization
         ///<summary>
         /// Search in dict for words that contains feature
         ///</summary>
-        vector<Word<T> *> Search(T feature, int maxChildNum = MAX_CHILD_NUM, bool fullSearch = false)
+        vector<Word<T> *> Search(T feature, bool fullSearch = false)
         {
-            return Search(&mRootNode, feature, maxChildNum, fullSearch);
+            return Search(&mRootNode, feature, fullSearch);
         }
-        vector<Word<T> *> Search(Node<T> *node, T feature, int maxChildNum = MAX_CHILD_NUM, bool fullSearch = false)
+        vector<Word<T> *> Search(Node<T> *node, T feature, bool fullSearch = false)
         {
             vector<Word<T> *> wordList;
             if (node->IsLeafNode())
@@ -229,26 +222,55 @@ namespace Localization
             }
             else
             {
-                node->SortChildNodes(feature);
-                vector<Node<T> *> childList = node->GetChildNodes();
-                for (int i = 0; i < maxChildNum; i++)
+                if (!fullSearch) // SIFT
                 {
-                    Node<T> *lNode = childList[i];
+                    //vector<double> frontierDistances;
+                    CalculateFrontierDistances(node, feature);
+                    node->SortChildNodes();
 
-                    //TODO: Optimization. Filliat 08. What is frontier distance?
-                    if (fullSearch)
+                    vector<Node<T> *> childList = node->GetChildNodes();
+                    //for (size_t i = 0; i < node->GetChildCount(); i++)
+                    //{
+                    //    cout << childList[i]->GetFrontier() << " ";
+                    //}
+                    //    cout << endl;
+                    for (int i = 0; i < MAX_CHILD_NUM; i++)
                     {
-                        vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
-                        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                        Node<T> *lNode = childList[i];
+                        if (lNode->GetFrontier() < mRadius)
+                        {
+                            //cout << lNode->GetFrontier() << endl;
+                            vector<Word<T> *> childWordList = Search(lNode, feature, fullSearch);
+                            wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                        }
                     }
-                    else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < FRONTIER_SIFT)
-                    //else if (Localization::CalculateDistance(feature, lNode->GetCenter()) < lNode->GetFrontier() + mRadius)
+                }
+                else // Color
+                {
+                    node->SortChildNodes(feature);
+                    vector<Node<T> *> childList = node->GetChildNodes();
+                    for (int i = 0; i < MAX_CHILD_NUM; i++)
                     {
-                        vector<Word<T> *> childWordList = Search(lNode, feature, maxChildNum, fullSearch);
+                        vector<Word<T> *> childWordList = Search(childList[i], feature, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
                     }
                 }
-
+                //vector<Node<T> *> childList = node->GetChildNodes();
+                //for (int i = 0; i < MAX_CHILD_NUM; i++)
+                //{
+                //    Node<T> *lNode = childList[i];
+                //    //TODO: Optimization. Filliat 08. What is frontier distance?
+                //    if (fullSearch)
+                //    {
+                //        vector<Word<T> *> childWordList = Search(lNode, feature, fullSearch);
+                //        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                //    }
+                //    else if (lNode->GetFrontier() < mRadius)
+                //    {
+                //        vector<Word<T> *> childWordList = Search(lNode, feature, fullSearch);
+                //        wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
+                //    }
+                //}
             }
             return wordList;
         }

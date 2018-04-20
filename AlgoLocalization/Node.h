@@ -2,6 +2,7 @@
 
 #include<vector>
 #include<algorithm>
+#include<limits>
 #include "Word.h"
 #include "Constants.h"
 
@@ -17,8 +18,7 @@ namespace Localization
         T mCenter{};
         std::vector<Node<T> *> mChildNodes;
         std::vector<Word<T> *> mWords;
-        double mFrontier = 0; // TODO: change this when 1. Add new word to node (in this case notify parent also) 2. Add node to parent node
-        Node<T>* mParent = nullptr;
+        double mDistFrontier = numeric_limits<double>::max(); // store frontier distances in SIFT search to use std::sort
     public:
         Node()
         {
@@ -35,44 +35,17 @@ namespace Localization
         void AddWord(Word<T> *word)
         {
             mWords.push_back(word);
-            //UpdateFrontier(this, CalculateDistance(word->GetCenter(), mCenter));
-        }
-
-        void UpdateFrontier(Node<T>* node, double newFrontier)
-        {
-            if (newFrontier > node->mFrontier)
-            {
-                node->mFrontier = newFrontier;
-            }
-            Node<T>* parent = node->mParent;
-            while (parent != nullptr)
-            {
-                UpdateFrontier(parent, newFrontier + CalculateDistance(parent->GetCenter(), node->GetCenter()));
-                parent = parent->GetParent();
-            }
         }
 
         void AddChildNode(Node<T> *node)
         {
             mChildNodes.push_back(node);
-            //node->SetParent(this);
-            //UpdateFrontier(this, node->GetFrontier() + CalculateDistance(mCenter, node->GetCenter())); // Frontier ~= dist(this, child) + dist(child, feature) TODO: explore approx
         }
 
         void RemoveWords() // TODO: Change frontier?
         {
             while (!mWords.empty())
                 mWords.pop_back();
-        }
-
-        void SetParent(Node<T> *parent)
-        {
-            mParent = parent;
-        }
-
-        Node<T>* GetParent()
-        {
-            return mParent;
         }
 
         vector<Word<T> *> GetWords() const
@@ -85,9 +58,14 @@ namespace Localization
             return mChildNodes;
         }
 
-        double GetFrontier()
+        void SetFrontier(double frontier)
         {
-            return mFrontier;
+            mDistFrontier = frontier;
+        }
+
+        double GetFrontier() const
+        {
+            return mDistFrontier;
         }
 
 
@@ -104,9 +82,9 @@ namespace Localization
                 mWords.end());
         }
 
+
+        // General sorting method, used by Color Histogram.
         // Sort child nodes according to their distances to a feature
-
-
         void SortChildNodes(T feature)
         {
             std::sort(mChildNodes.begin(), mChildNodes.end(),
@@ -118,6 +96,15 @@ namespace Localization
             });
         }
 
+        // When we have distances to Voronoi frontiers, SIFT
+        void SortChildNodes()
+        {
+            std::sort(mChildNodes.begin(), mChildNodes.end(),
+                [](const Node<T>* lhs, const Node<T>* rhs)
+            {
+                return (lhs->GetFrontier() < rhs->GetFrontier());
+            });
+        }
         bool IsLeafNode()
         {
             return ((mChildNodes.size() == 0) ? true : false);
@@ -131,6 +118,7 @@ namespace Localization
 
         // Return a vector counting words according to their lables
         // {0, 1, 2, 0 + 1, 0 + 2, 1 + 2, 0 + 1 + 2}
+        // TODO: make general
         vector<int> AnalyseWords()
         {
             assert(NUM_ROOMS == 3);
@@ -170,5 +158,46 @@ namespace Localization
 
 
     };
+    template <class T>
+    void CalculateFrontierDistances(Node<T>* node, T feature) {}
+
+    template<>
+    void CalculateFrontierDistances(Node<Mat>* node, Mat feature)
+    {
+        int nbChild = node->GetChildCount();
+        // distMat(i,j) is the distance from feature to frontier between i and j
+        // if negative, on side of i
+        // if positive, on side of j
+        Mat distMat(nbChild, nbChild, CV_64FC1);
+        // distances(i) = max(distMat(i,:)).
+        // distances(i) < RADIUS means feature in the cell of i
+        vector<double> distances;
+        vector<Node<Mat> *> nodeList = node->GetChildNodes();
+        for (size_t i = 0; i < nbChild; i++)
+        {
+            Node<Mat>* lNodeI = nodeList[i];
+            //Mat VecIFeature = feature - lNodeI->GetCenter();
+            for (size_t j = 0; j < i; j++)
+            {
+                Node<Mat>* lNodeJ = nodeList[j];
+                Mat vecJFeature = feature - lNodeJ->GetCenter();
+                Mat vecIJ = lNodeJ->GetCenter() - lNodeI->GetCenter();
+                double normIJ = norm(vecIJ, NORM_L2);
+                double projection = vecJFeature.dot(vecIJ) / normIJ;
+                double distI2J = normIJ / 2 - projection;
+                distMat.at<double>(i, j) = distI2J;
+                distMat.at<double>(j, i) = distI2J;
+            }
+        }
+        for (size_t i = 0; i < nbChild; i++)
+        {
+            distMat.at<double>(i, i) = 0;
+            double min, max;
+            minMaxIdx(distMat.row(i), &min, &max);
+            distances.push_back(max);
+            nodeList[i]->SetFrontier(max);
+        }
+        //return vector<double>();
+    }
 }
 

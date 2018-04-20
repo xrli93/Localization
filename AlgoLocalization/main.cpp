@@ -137,7 +137,6 @@ string GetFileName(string dir, int i)
     return filename;
 }
 
-
 class Tester
 {
 public:
@@ -180,8 +179,8 @@ public:
         vector<int> wordsCount = mLocalizer.CountWords();
         vector<int> nodesCount = mLocalizer.CountNodes();
         vector<int> featuresCount = mLocalizer.CountFeatures();
-        vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(FEATURE_SIFT);
-        vector<int> ColorAnalysis = mLocalizer.AnalyseDict(FEATURE_COLOR);
+        vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
+        vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
         cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
         cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
         cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
@@ -283,15 +282,15 @@ public:
     {
         for (size_t i = 1; i <= TRAIN_SIZE; i++)
         {
-            salonImgs.push_back(imread(video + "salon_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            cuisineImgs.push_back(imread(video + "cuisine_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            reunionImgs.push_back(imread(video + "reunion_train25\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            salonImgs.push_back(imread(SALON_TRAIN + to_string(i) + ".jpg", IMREAD_COLOR));
+            cuisineImgs.push_back(imread(CUISINE_TRAIN + to_string(i) + ".jpg", IMREAD_COLOR));
+            reunionImgs.push_back(imread(REUNION_TRAIN + to_string(i) + ".jpg", IMREAD_COLOR));
         }
-        for (size_t i = 1; i <= VIDEO_SIZE; i++)
+        for (size_t i = 1; i <= TEST_SIZE; i++)
         {
-            salonTest.push_back(imread(video + "salon_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            cuisineTest.push_back(imread(video + "cuisine_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
-            reunionTest.push_back(imread(video + "reunion_test\\" + to_string(i) + ".jpg", IMREAD_COLOR));
+            salonTest.push_back(imread(SALON_TEST +  to_string(i) + ".jpg", IMREAD_COLOR));
+            cuisineTest.push_back(imread(CUISINE_TEST + to_string(i) + ".jpg", IMREAD_COLOR));
+            reunionTest.push_back(imread(REUNION_TEST + to_string(i) + ".jpg", IMREAD_COLOR));
         }
     }
     void Run(vector<double>* results, bool enableCorrection, vector<double>* secondResults)
@@ -348,102 +347,41 @@ public:
 
 };
 
-void testLocalizer()
-{
-
-    Localizer localizer = Localizer();
-
-    //Mat img1 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo1.png", IMREAD_COLOR); // Read the file
-    //Mat img2 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo2.png", IMREAD_COLOR); // Read the file
-    //Mat img3 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo3.png", IMREAD_COLOR); // Read the file
-    //Mat img11 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo11.png", IMREAD_COLOR); // Read the file
-    //Mat img12 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo12.png", IMREAD_COLOR); // Read the file
-    //Mat img21 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo21.png", IMREAD_COLOR); // Read the file
-    //Mat img22 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo22.png", IMREAD_COLOR); // Read the file
-    //Mat img31 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo31.png", IMREAD_COLOR); // Read the file
-    //Mat img32 = imread("C:\\Users\\Hoth\\Downloads\\opencv-logo32.png", IMREAD_COLOR); // Read the file
-    //localizer.AddImage(img1, 0);
-    //localizer.AddImage(img11, 0);
-    //localizer.AddImage(img12, 0);
-    //localizer.AddImage(img2, 1);
-    //localizer.AddImage(img21, 1);
-    //localizer.AddImage(img22, 1);
-    //localizer.AddImage(img3, 2);
-    //localizer.AddImage(img31, 2);
-    //localizer.AddImage(img32, 2);
-
-    Mat blue1 = imread("C:\\Users\\Hoth\\Downloads\\blue1.jpg", IMREAD_COLOR); // Read the file
-    Mat blue2 = imread("C:\\Users\\Hoth\\Downloads\\blue2.jpg", IMREAD_COLOR); // Read the file
-    Mat red1 = imread("C:\\Users\\Hoth\\Downloads\\red1.jpg", IMREAD_COLOR); // Read the file
-    Mat mix1 = imread("C:\\Users\\Hoth\\Downloads\\mix1.jpg", IMREAD_COLOR); // Read the file
-    Mat mix2 = imread("C:\\Users\\Hoth\\Downloads\\mix2.jpg", IMREAD_COLOR); // Read the file
-    Mat green1 = imread("C:\\Users\\Hoth\\Downloads\\green1.jpg", IMREAD_COLOR); // Read the file
-    Mat green2 = imread("C:\\Users\\Hoth\\Downloads\\green2.jpg", IMREAD_COLOR); // Read the file
-
-    localizer.AddImage(blue1, 0);
-    localizer.AddImage(blue2, 0);
-    localizer.AddImage(green1, 1);
-    localizer.AddImage(green2, 1);
-    localizer.AddImage(mix1, 2);
-    localizer.AddImage(mix2, 2);
-
-    localizer.LearnCollection();
-
-    vector<int> wordsCount = localizer.CountWords();
-    vector<int> nodesCount = localizer.CountNodes();
-    vector<int> featuresCount = localizer.CountFeatures();
-    cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
-    cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
-    cout << "features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
-
-    auto t1 = std::chrono::high_resolution_clock::now();
-    vector<Mat> imgs;
-    imgs.push_back(red1);
-    double quality = 0;
-    cout << "Room detected: " << localizer.IdentifyRoom(imgs, &quality);
-    cout << " with quality " << quality << endl;
-
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "took "
-        << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-        << " milliseconds\n";
-
-    //testSIFT();
-
-}
 int main() {
 
-    int nExperiments = N_EXPERIMENTS;
-    vector<double> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
-    vector<double> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
-    for (size_t i = 0; i < nExperiments; i++)
-    {
-        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-        //Tester mTester = Tester();
-        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-    }
+    //try
+    //{
+        int nExperiments = N_EXPERIMENTS;
+        vector<double> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+        vector<double> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+        for (size_t i = 0; i < nExperiments; i++)
+        {
+            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+            //Tester mTester = Tester();
+            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+        }
 
-    cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-    for (size_t i = 0; i < stats.size(); i++)
-    {
-        cout << stats[i] / nExperiments << ", ";
-    }
-    cout << endl;
-    if (ENABLE_CORRECTION)
-    {
-        cout << "Percentage for correct and unidentified in 3 rooms after correction " << endl;
+        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
         for (size_t i = 0; i < stats.size(); i++)
         {
-            cout << correctStats[i] / nExperiments << ", ";
+            cout << stats[i] / nExperiments << ", ";
         }
-    }
-    //Mat myMat(1, 10, CV_8UC1);
-    //randu(myMat, Scalar(0), Scalar(20));
-    //cout << myMat << endl;
-    //Mat out;
-    //GaussianBlur(myMat, out, Size(0,0), 5);
-    //cout << out;
+        cout << endl;
+        if (ENABLE_CORRECTION)
+        {
+            cout << "Percentage for correct and unidentified in 3 rooms after correction " << endl;
+            for (size_t i = 0; i < stats.size(); i++)
+            {
+                cout << correctStats[i] / nExperiments << ", ";
+            }
+        }
+    //}
+    //catch (cv::Exception & e)
+    //{
+    //    cout << e.msg << endl;
+    //}
+
 
     std::cin.get();
     return 0;

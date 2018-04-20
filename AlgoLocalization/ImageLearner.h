@@ -44,7 +44,7 @@ namespace Localization
             vector<double> votes(NUM_ROOMS, 0);
             for (size_t i = 0; i < features.rows; i++)
             {
-                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
+                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), FULL_SEARCH);
                 typename vector<Word<Mat> *>::iterator iter;
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
@@ -149,13 +149,13 @@ namespace Localization
     public:
         SIFTImageLearner()
         {
-            mDict.SetFeatureMethod(FEATURE_SIFT);
+            mDict.SetFeatureMethod(USE_SIFT);
             mDict.SetRadius();
         }
 
         SIFTImageLearner(double radius)
         {
-            mDict.SetFeatureMethod(FEATURE_SIFT);
+            mDict.SetFeatureMethod(USE_SIFT);
             mDict.SetRadius(radius);
         }
 
@@ -189,7 +189,7 @@ namespace Localization
         // https://docs.opencv.org/2.4/modules/imgproc/doc/histograms.html?highlight=hsv
         ColorHistogramLearner()
         {
-            mDict.SetFeatureMethod(FEATURE_COLOR);
+            mDict.SetFeatureMethod(USE_COLOR);
             mDict.SetRadius();
         }
         Mat GetHue(const Mat& img)
