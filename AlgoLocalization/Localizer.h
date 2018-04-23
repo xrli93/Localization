@@ -119,7 +119,7 @@ namespace Localization
                         cout << "Color voting" << ColorVote << endl;
                     }
                     // SIFT Important
-                    secondVotes[ColorVote] += 1 * WEIGHT_COLOR;
+                    secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
                 }
                 else if (verbose)
                 {
@@ -127,7 +127,7 @@ namespace Localization
                 }
 
                 // SIFT important
-                if (images.size() == 1 && ColorVote > -1 && SIFTVote > -1)
+                if (PRIORITIZE_SIFT && images.size() == 1 && ColorVote > -1 && SIFTVote > -1)
                 {
                     if (ColorVote != SIFTVote)
                     {

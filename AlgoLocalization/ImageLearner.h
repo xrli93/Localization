@@ -59,7 +59,7 @@ namespace Localization
                 quality = new double;
             }
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
-            if (ref > 0 && result > -1 && result != ref) // wrong result
+            if (ref > -1 && result > -1 && result != ref) // wrong result
             {
                 //ReducImage(img, features, result, ref); // Check features
                 ReducImage(features, ref);
@@ -169,7 +169,12 @@ namespace Localization
             {
                 equalizeHist(lImg, lImg);
             }
-            //imshow("dfd", lImg);
+            if (ENABLE_CLAHE)
+            {
+                Ptr<cv::CLAHE> clahe = createCLAHE(1.5, Size(8, 8));
+                clahe->apply(lImg, lImg);
+            }
+            //imshow(" ", lImg);
             //waitKey(100);
             Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
 
@@ -231,6 +236,8 @@ namespace Localization
             // Type 1: 40 x 40 every 20 pixels
             // Type 2: 20 x 20 every 10 pixels
             CalculateWindows(img, width, height, 80, 40, &imgWindows); // Type 1
+            CalculateWindows(img, width, height, 120, 40, &imgWindows); 
+            CalculateWindows(img, width, height, 40, 40, &imgWindows); 
             //CalculateWindows(img, width, height, 120, 40, &imgWindows); // Type 1
             return imgWindows;
         }

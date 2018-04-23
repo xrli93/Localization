@@ -1,69 +1,115 @@
 #pragma once
 
-// Hyperparameters for tuning
+using namespace std;
+
+// ---------------- Dictionary parameters ----------------
 #define RADIUS 50.0
-// L2 + CHI SQUARES
-//#define RADIUS_SIFT 80.0
-//#define RADIUS_COLOR 16
-//#define FRONTIER_SIFT 6000
-//#define FRONTIER_COLOR 500
-
-
-// RADIUS_SIFT for different norms: L2 ~ 200, CHI_Squares ~ 700, 
-// RADIUS_COLOR for non-normalized: 30 ~ 50, normalized Diffusion ~ 0.03
-
-
 #define RADIUS_SIFT 180
-#define ENABLE_HISTOGRAM_NORMALIZATION false
-#define RADIUS_COLOR 30
+#define ENABLE_HISTOGRAM_NORMALIZATION true
+#define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
 
-#define NUM_MAX_SIFT 250
+#define NUM_MAX_SIFT 150
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
 #define MAX_CHILD_NUM 1
 #define FULL_SEARCH true
-#define ENABLE_EQUALIZER false
 
-// Really constant 
-#define NUM_ROOMS 3
+// ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.1
 #define THRESHOLD_SECOND_VOTE 0.3
 #define DIM_COLOR_HIST 16
 #define DIM_SIFT 128
 #define USE_SIFT 1
 #define USE_COLOR 0
-#define TEST_SIZE 30
-#define TRAIN_SIZE 50
-
+#define NUM_ROOMS 4
 #define SALON 0
 #define CUISINE 1
 #define REUNION 2
-
+#define MANGER 3
 #define WORD_TYPES 7
-#define VERBOSE false
 
-#define ENABLE_CORRECTION false
-
+// ------------ Model ----------------
+#define ENABLE_CLAHE false
+#define PRIORITIZE_SIFT true
+#define ENABLE_CORRECTION true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
 const int mNorm = NORM_KL;
+#define ENABLE_EQUALIZER false
+
+// ------------ Display --------------
 #define DISP_DEBUG false
+#define DISP_IMAGE false
+#define VERBOSE false
 
-#define N_LEARNING TRAIN_SIZE
-#define N_TEST 30
-#define N_IMGS 1
+// ------------ Hyperparameters ------------
+#define TEST_SIZE 50
+#define TRAIN_SIZE 50
+#define N_LEARNING TRAIN_SIZE / 2
+#define N_TEST 16
+#define N_IMGS 3
 #define N_EXPERIMENTS 3
-#define WEIGHT_COLOR 0.25
-#define SALON_TRAIN "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_train\\"
-#define REUNION_TRAIN "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_train\\"
-#define CUISINE_TRAIN "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_train\\"
-#define CUISINE_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_test_var\\"
-#define SALON_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_test_var\\"
-#define REUNION_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_test_var\\"
+#define WEIGHT_COLOR 0.5
 
-//#define CUISINE_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_test\\"
-//#define SALON_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_test\\"
-//#define REUNION_TEST "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_test\\"
+
+// Datasets 
+string salonTrainPath;
+string cuisineTrainPath;
+string reunionTrainPath;
+string mangerTrainPath;
+string salonTestPath;
+string cuisineTestPath;
+string reunionTestPath;
+string mangerTestPath;
+#define SALON_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_train\\"
+#define CUISINE_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_train\\"
+#define REUNION_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_train\\"
+#define MANGER_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\manger_train\\"
+
+#define SALON_TEST_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_test\\"
+#define CUISINE_TEST_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_test\\"
+#define REUNION_TEST_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_test\\"
+#define MANGER_TEST_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\manger_test\\"
+
+#define CUISINE_TEST_V2_VAR "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_test_var\\"
+#define SALON_TEST_V2_VAR "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_test_var\\"
+#define REUNION_TEST_V2_VAR "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_test_var\\"
+#define MANGER_TEST_V2_VAR "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\manger_test_var\\"
+
+#define DATA_V1 1
+#define DATA_V2 2
+#define DATA_V2_VAR 3
+const int dataSet = DATA_V2_VAR;
+
+void initParameters()
+{
+    if (dataSet == DATA_V2)
+    {
+        salonTrainPath = SALON_TRAIN_V2;
+        cuisineTrainPath = CUISINE_TRAIN_V2;
+        reunionTrainPath = REUNION_TRAIN_V2;
+        salonTestPath = SALON_TEST_V2;
+        cuisineTestPath = CUISINE_TEST_V2;
+        reunionTestPath = REUNION_TEST_V2;
+        mangerTrainPath = MANGER_TRAIN_V2;
+        mangerTestPath = MANGER_TEST_V2;
+    }
+
+    if (dataSet == DATA_V2_VAR)
+    {
+        salonTrainPath = SALON_TRAIN_V2;
+        cuisineTrainPath = CUISINE_TRAIN_V2;
+        reunionTrainPath = REUNION_TRAIN_V2;
+        salonTestPath = SALON_TEST_V2_VAR;
+        cuisineTestPath = CUISINE_TEST_V2_VAR;
+        reunionTestPath = REUNION_TEST_V2_VAR;
+        mangerTrainPath = MANGER_TRAIN_V2;
+        mangerTestPath = MANGER_TEST_V2_VAR;
+    }
+}
+
+
+
