@@ -14,16 +14,18 @@ namespace Localization
     public:
         TreeDict<T> mDict{};
         int mFeatureCount = 0;
+        vector<int> mRoomFeaturesCount;
     public:
-        ImageLearner() {};
+        ImageLearner() { mRoomFeaturesCount = vector<int>(NUM_ROOMS, 0); };
         ~ImageLearner() {};
 
     public:
-        virtual Mat CalculateFeatures(const Mat& img) = 0;
-        //virtual int IdentifyImage(Mat img) = 0;
-        void LearnImage(Mat img, int label)
-        {
 
+        virtual Mat CalculateFeatures(const Mat& img) = 0;
+
+        // Learn one image and return the number of features learrnt
+        int LearnImage(Mat img, int label)
+        {
             Mat features = CalculateFeatures(img);
             // Set origin node to zero
             Mat origin = Mat(1, features.cols, CV_8UC1, Scalar(0.));
@@ -33,8 +35,10 @@ namespace Localization
                 mDict.AddFeature(features.row(i), label);
                 //std::cout << "feature No." << i << endl;
             }
-            mFeatureCount += (int)features.rows;
-
+            int nFeatures = (int)features.rows;
+            mFeatureCount += nFeatures;
+            mRoomFeaturesCount[label] += nFeatures;
+            return nFeatures;
         }
 
         // First level voting
@@ -56,7 +60,7 @@ namespace Localization
             }
             if (quality == NULL)
             {
-                quality = new float;
+                float* quality = new float;
             }
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             if (ref > -1 && result > -1 && result != ref) // wrong result
@@ -121,25 +125,41 @@ namespace Localization
             return mDict.AnalyseWords();
         }
 
+        vector<int> CountRoomFeatures()
+        {
+            return mRoomFeaturesCount;
+        }
+
     };
 
-    int CountVotes(vector<float>& votes, float* quality = NULL, float threshold = THRESHOLD_FIRST_VOTE)
+    int CountVotes(vector<float>& votes, float* quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
     {
         int result;
         vector<float>::iterator maxIter = max_element(votes.begin(), votes.end());
         float maxVote = *maxIter;
-        float sumVote = 0;
+        float lSumVote = 0;
         result = distance(votes.begin(), maxIter);
-        for (size_t i = 0; i < votes.size(); i++)
+        if (sumVotes == 0)
         {
-            sumVote += votes[i];
+            for (size_t i = 0; i < votes.size(); i++)
+            {
+                lSumVote += votes[i];
+            }
+        }
+        else
+        {
+            lSumVote = sumVotes;
         }
         *maxIter = 0; // set max vote to zero
         float secondVote = *max_element(votes.begin(), votes.end());
         *maxIter = maxVote; // restore
-        float lQuality = (maxVote - secondVote) / sumVote;
+        float lQuality = (maxVote - secondVote) / lSumVote;
         *quality = lQuality;
-        return (lQuality > threshold) ? result : -1;
+        if (threshold == THRESHOLD_SECOND_VOTE && DISP_INCREMENTAL)
+        {
+            cout << maxVote << " " << secondVote << " " << lSumVote << " " << *quality << " " << endl;
+        }
+        return (lQuality >= threshold) ? result : -1;
     }
 
 
@@ -172,7 +192,6 @@ namespace Localization
             mDict.SetFeatureMethod(USE_SIFT);
             mDict.SetRadius(radius);
         }
-
 
         Mat CalculateFeatures(const Mat& img)
         {
@@ -258,8 +277,8 @@ namespace Localization
             // Type 1: 40 x 40 every 20 pixels
             // Type 2: 20 x 20 every 10 pixels
             CalculateWindows(img, width, height, 80, 40, &imgWindows); // Type 1
-            CalculateWindows(img, width, height, 120, 40, &imgWindows); 
-            CalculateWindows(img, width, height, 40, 40, &imgWindows); 
+            CalculateWindows(img, width, height, 120, 40, &imgWindows);
+            CalculateWindows(img, width, height, 40, 40, &imgWindows);
             //CalculateWindows(img, width, height, 120, 40, &imgWindows); // Type 1
             return imgWindows;
         }

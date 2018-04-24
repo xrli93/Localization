@@ -14,16 +14,11 @@ namespace Localization
     {
     private:
         SIFTImageLearner mSIFTLearner;
-        ColorHistogramLearner mColorLearner{};
-        vector<float> secondVotes;
+        ColorHistogramLearner mColorLearner;
         vector<Mat> imageCollection;
         vector<int> labelCollection;
     public:
-        Localizer()
-        {
-            secondVotes = vector<float>(NUM_ROOMS, 0);
-        };
-
+        Localizer() { };
 
         ~Localizer() { };
         vector<int> AnalyseDict(int featureMethod)
@@ -93,10 +88,70 @@ namespace Localization
             }
         }
 
+        // To determine if necessary to continue learning
+        bool LearntEnoughFeatures()
+        {
+            vector<int> featuresCountSIFT = mSIFTLearner.CountRoomFeatures();
+            vector<int> featuresCountColor = mColorLearner.CountRoomFeatures();
+            int minCountSIFT = *min_element(featuresCountSIFT.begin(), featuresCountSIFT.end());
+            int minCountColor = *min_element(featuresCountColor.begin(), featuresCountColor.end());
+            if (minCountColor < NUM_MIN_FEATURES || minCountSIFT < NUM_MIN_FEATURES)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        // Incremental learning. 
+        // After each image, returns Room number if successfully recognized
+        // Returns -1 if need more image
+
+        int IdentityRoom(Mat img, bool* halt = NULL, int ref = -1)
+        {
+            static vector<float> secondVotes(NUM_ROOMS, 0);
+            static int trys = 0;
+            float quality = 0;
+            int SIFTVote = mSIFTLearner.IdentifyImage(img, &quality, ref);
+            int ColorVote = mColorLearner.IdentifyImage(img, &quality, ref);
+            double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
+            if (SIFTVote > -1)
+            {
+                if (VERBOSE)
+                {
+                    cout << "SIFT voting" << SIFTVote << endl;
+                }
+                secondVotes[SIFTVote] += 1;
+            }
+            if (ColorVote > -1)
+            {
+                if (VERBOSE)
+                {
+                    cout << "Color voting" << SIFTVote << endl;
+                }
+                secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
+            }
+            double sumSecondVotes = 0;
+            for (size_t i = 0; i < secondVotes.size(); i++)
+            {
+                sumSecondVotes += secondVotes[i];
+            }
+            //int result = Localization::CountVotes(secondVotes, &quality, THRESHOLD_SECOND_VOTE, sumFactor * (trys+1));
+            int result = Localization::CountVotes(secondVotes, &quality, THRESHOLD_SECOND_VOTE);
+            if ((quality >= THRESHOLD_SECOND_VOTE && sumSecondVotes > 1) || ++trys >= NUM_MAX_IMAGES)
+            {
+                fill(secondVotes.begin(), secondVotes.end(), 0);
+                trys = 0;
+                *halt = true;
+                return result;
+            }
+            return -1;
+        }
+
         // Second level voting for images on two feature spaces
+        // Function for testing on databases
         int IdentifyRoom(vector<Mat> images, float* quality = NULL, bool verbose = false, int ref = -1)
         {
-            fill(secondVotes.begin(), secondVotes.end(), 0);
+            vector<float> secondVotes(NUM_ROOMS, 0);
             for (size_t i = 0; i < images.size(); i++)
             {
                 Mat img = images[i];

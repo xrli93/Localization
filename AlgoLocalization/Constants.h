@@ -32,11 +32,14 @@ using namespace std;
 #define REUNION 2
 #define MANGER 3
 #define WORD_TYPES 7
+#define NUM_MIN_FEATURES 3000
+#define NUM_MAX_IMAGES 5
 
 // ------------ Model ----------------
 #define FULL_SEARCH true
 #define ENABLE_CLAHE false
 #define ENABLE_CORRECTION false
+#define ENABLE_INCREMENTAL true
 #define PRIORITIZE_SIFT true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
@@ -46,6 +49,7 @@ const int mNorm = NORM_KL;
 // ------------ Display --------------
 #define DISP_DEBUG false
 #define DISP_IMAGE false
+#define DISP_INCREMENTAL false
 #define VERBOSE false
 
 // ------------ Hyperparameters ------------
@@ -54,8 +58,8 @@ const int mNorm = NORM_KL;
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1
-#define N_EXPERIMENTS 1
-#define WEIGHT_COLOR 0.5
+#define N_EXPERIMENTS 3
+#define WEIGHT_COLOR 0.75 // 0.5
 
 
 // Datasets 
