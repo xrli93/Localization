@@ -35,7 +35,7 @@ void testAddFeature()
 
 void testSearch(TreeDict<cv::Mat> *dict)
 {
-    cv::Mat mat(1, 128, CV_32FC1);
+    cv::Mat mat(1, 128, CV_8UC1);
     randu(mat, cv::Scalar(0), cv::Scalar(100));
     dict->Search(dict->GetRootNode(), mat);
 }
@@ -108,7 +108,7 @@ void testSIFT()
     //Mat features = learner.CalculateFeatures(img);
     //Mat row(features.row(0));
 
-    double quality = 0;
+    float quality = 0;
     int res = learner.IdentifyImage(img21, &quality);
     cout << "Room is " << res << endl;
 }
@@ -206,14 +206,14 @@ public:
         }
     }
 
-    void ReportResults(vector<Mat>& imgs, int label, vector<double>* stats, int offset = 0)
+    void ReportResults(vector<Mat>& imgs, int label, vector<float>* stats, int offset = 0)
     {
         srand(time(0));
         random_shuffle(imgs.begin(), imgs.end());
         int correct = 0;
         int unIdentified = 0;
         //for (size_t i = nLearning; i < nLearning + nTest; i++)
-        double timings = 0;
+        float timings = 0;
         for (size_t i = 0; i < nTest; i++)
         {
             vector<Mat> lImgs;
@@ -223,7 +223,7 @@ public:
                 lImgs.push_back(lImg);
             }
 
-            double quality = 0;
+            float quality = 0;
             auto t1 = std::chrono::high_resolution_clock::now();
             int result;
             if (ENABLE_CORRECTION)
@@ -262,7 +262,7 @@ public:
             }
 
             auto t2 = std::chrono::high_resolution_clock::now();
-            timings += (double)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
             //std::cout << "took "
             //    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
             //    << " milliseconds\n" << endl;
@@ -271,8 +271,8 @@ public:
         {
             mLocalizer.RemoveCommonWords();
         }
-        double percentCorrect = correct * 100.0 / nTest;
-        double percentUnidentified = unIdentified * 100.0 / nTest;
+        float percentCorrect = correct * 100.0 / nTest;
+        float percentUnidentified = unIdentified * 100.0 / nTest;
 
         cout << "***********  Average timing: " << timings / nTest << endl;
         cout << "** ** ** **  Correct: " << percentCorrect << "%" << endl;
@@ -308,7 +308,7 @@ public:
             mangerTest.push_back(imread(mangerTestPath + to_string(i) + ".jpg", IMREAD_COLOR));
         }
     }
-    void Run(vector<double>* results, bool enableCorrection, vector<double>* secondResults)
+    void Run(vector<float>* results, bool enableCorrection, vector<float>* secondResults)
     {
         stringstream ss;
         string filename;
@@ -320,19 +320,19 @@ public:
         for (size_t i = 0; i < nExperiments; i++)
         {
             Train(&salonImgs, SALON);
-            //ReportDict();
+            ReportDict();
             Train(&cuisineImgs, CUISINE);
-            //ReportDict();
+            ReportDict();
             Train(&reunionImgs, REUNION);
-            Train(&mangerImgs, MANGER);
+            //Train(&mangerImgs, MANGER);
             cout << " Training done " << endl;
-            //ReportDict();
+            ReportDict();
             cout << endl << endl;
 
             ReportResults(salonTest, SALON, results);
             ReportResults(cuisineTest, CUISINE, results);
             ReportResults(reunionTest, REUNION, results);
-            ReportResults(mangerTest, MANGER, results);
+            //ReportResults(mangerTest, MANGER, results);
             ReportDict();
             cout << endl << endl;
 
@@ -357,8 +357,8 @@ int main() {
     //{
     initParameters();
     int nExperiments = N_EXPERIMENTS;
-    vector<double> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
-    vector<double> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+    vector<float> stats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+    vector<float> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
     for (size_t i = 0; i < nExperiments; i++)
     {
         cout << "---------------- Run " << i + 1 << " -----------------" << endl;
@@ -373,19 +373,6 @@ int main() {
         cout << stats[i] / nExperiments << ", ";
     }
     cout << endl;
-    //if (ENABLE_CORRECTION)
-    //{
-    //    cout << "Percentage for correct and unidentified in 3 rooms after correction " << endl;
-    //    for (size_t i = 0; i < stats.size(); i++)
-    //    {
-    //        cout << correctStats[i] / nExperiments << ", ";
-    //    }
-    //}
-    //}
-    //catch (cv::Exception & e)
-    //{
-    //    cout << e.msg << endl;
-    //}
     std::cin.get();
     return 0;
 }

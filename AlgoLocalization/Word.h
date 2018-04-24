@@ -18,7 +18,7 @@ namespace Localization
     {
     private:
         T mCenter; // word center in feature space
-        double mRadius = RADIUS; // radius of word 
+        float mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
         Node<T> * mNode; // Node which contains it
 
@@ -44,7 +44,7 @@ namespace Localization
             UpdateLabel(indexRoom);
         }
 
-        Word(T feature, int indexRoom, double radius) : mCenter(feature), mRadius(radius)
+        Word(T feature, int indexRoom, float radius) : mCenter(feature), mRadius(radius)
         {
             initMPresenceRooms();
             UpdateLabel(indexRoom);
@@ -57,7 +57,7 @@ namespace Localization
             return mCenter;
         }
 
-        double GetRadius()
+        float GetRadius()
         {
             return mRadius;
         }
@@ -107,9 +107,9 @@ namespace Localization
         }
 
         // Vote using inverse document frequency 
-        vector<double> Vote()
+        vector<float> Vote()
         {
-            vector<double> scores(NUM_ROOMS, 0);
+            vector<float> scores(NUM_ROOMS, 0);
             int roomsSeen = 0;
             for (size_t i = 0; i < NUM_ROOMS; i++)
             {
@@ -136,10 +136,10 @@ namespace Localization
 
     };
 
-    double DiffusionDistance(const Mat& x, const Mat& y, double sigma = 1.6)
+    float DiffusionDistance(const Mat& x, const Mat& y, float sigma = 1.6)
     {
         Mat d = x - y;
-        double dist = 0;
+        float dist = 0;
         dist += norm(d, NORM_L1);
         while (d.cols > 1)
         {
@@ -151,12 +151,12 @@ namespace Localization
     }
 
     template <class T>
-    double CalculateDistance(const T& x, const T& y) {}
+    float CalculateDistance(const T& x, const T& y) {}
 
-    template<> double CalculateDistance(const vector<double>& x, const vector<double>& y)
+    template<> float CalculateDistance(const vector<float>& x, const vector<float>& y)
     {
         assert(x.size() == y.size());
-        double norm = 0;
+        float norm = 0;
         for (size_t i = 0; i != x.size(); i++)
         {
             norm += (x[i] - y[i]) * (x[i] - y[i]);
@@ -165,18 +165,29 @@ namespace Localization
     }
 
 
-    template<> double CalculateDistance(const int& x, const int& y)
+    template<> float CalculateDistance(const int& x, const int& y)
     {
         return abs(x - y);
     }
 
-    template<> double CalculateDistance(const cv::Mat& x, const cv::Mat& y)
+    template<> float CalculateDistance(const cv::Mat& x, const cv::Mat& y)
     {
-        if (x.cols == DIM_SIFT) //  Sift features
+        if (x.cols == DIM_SIFT || x.cols != DIM_COLOR_HIST) //  Sift features
         {
             //cout << compareHist(x, y, CV_COMP_KL_DIV);
-            double dist = norm(x - y, NORM_L2);
-            //double dist = compareHist(x, y, CV_COMP_CHISQR);
+            Mat diff(x.size(), x.type());
+            Mat temp(x.size(), x.type());
+            if (y.type() != x.type())
+            {
+                y.convertTo(temp, x.type());
+                diff = temp - x;
+            }
+            else
+            {
+                diff = y - x;
+            }
+            float dist = norm(diff, NORM_L2);
+            //float dist = compareHist(x, y, CV_COMP_CHISQR);
             if (DISP_DEBUG)
             {
                 cout << dist << endl;
@@ -188,8 +199,8 @@ namespace Localization
             //TODO: implement or find diffusion distance as mentioned in Filliat 08 [27]
             //return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
 
-            double dist = (mNorm == NORM_KL) ? compareHist(x, y, CV_COMP_KL_DIV) : DiffusionDistance(x, y, 1.0);
-            //double dist = DiffusionDistance(x, y, 1.2);
+            float dist = (mNorm == NORM_KL) ? compareHist(x, y, CV_COMP_KL_DIV) : DiffusionDistance(x, y, 1.0);
+            //float dist = DiffusionDistance(x, y, 1.2);
             //cout << dist << endl;
             return dist;  // lower the closer. CV_COMP_BHATTACHARYYA possible.
 

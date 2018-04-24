@@ -4,7 +4,9 @@ using namespace std;
 
 // ---------------- Dictionary parameters ----------------
 #define RADIUS 50.0
-#define RADIUS_SIFT 180
+#define RADIUS_SIFT 180 // SIFT
+//#define RADIUS_SIFT 120 // ORB
+//#define RADIUS_SIFT 0.20 // SURF
 #define ENABLE_HISTOGRAM_NORMALIZATION true
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
@@ -15,16 +17,16 @@ using namespace std;
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
 #define MAX_CHILD_NUM 1
-#define FULL_SEARCH true
 
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.1
-#define THRESHOLD_SECOND_VOTE 0.3
+#define THRESHOLD_SECOND_VOTE 0.1
 #define DIM_COLOR_HIST 16
 #define DIM_SIFT 128
 #define USE_SIFT 1
 #define USE_COLOR 0
-#define NUM_ROOMS 4
+#define USE_SURF 2
+#define NUM_ROOMS 3
 #define SALON 0
 #define CUISINE 1
 #define REUNION 2
@@ -32,9 +34,10 @@ using namespace std;
 #define WORD_TYPES 7
 
 // ------------ Model ----------------
+#define FULL_SEARCH true
 #define ENABLE_CLAHE false
+#define ENABLE_CORRECTION false
 #define PRIORITIZE_SIFT true
-#define ENABLE_CORRECTION true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
 const int mNorm = NORM_KL;
@@ -48,10 +51,10 @@ const int mNorm = NORM_KL;
 // ------------ Hyperparameters ------------
 #define TEST_SIZE 50
 #define TRAIN_SIZE 50
-#define N_LEARNING TRAIN_SIZE / 2
-#define N_TEST 16
-#define N_IMGS 3
-#define N_EXPERIMENTS 3
+#define N_LEARNING TRAIN_SIZE
+#define N_TEST 50
+#define N_IMGS 1
+#define N_EXPERIMENTS 1
 #define WEIGHT_COLOR 0.5
 
 

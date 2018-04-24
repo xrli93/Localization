@@ -17,8 +17,8 @@ namespace Localization
     private:
         Node<T> mRootNode{};
         int mFeatureMethod;
-        double mRadius = RADIUS;
-        //double mFrontier = RADIUS * 5;
+        float mRadius = RADIUS;
+        //float mFrontier = RADIUS * 5;
         int mNMaxWords = NUM_MAX_WORDS;
         // DEBUG
         int v1 = 0;
@@ -52,7 +52,7 @@ namespace Localization
             return &mRootNode;
         }
 
-        void SetRadius(double radius)
+        void SetRadius(float radius)
         {
             mRadius = radius;
         }
@@ -177,8 +177,8 @@ namespace Localization
         void AddFeature(T feature, int indexRoom)
         {
             //bool enableFullSearch = (mFeatureMethod == USE_SIFT) ? false : true;
-            bool enableFullSearch = true;
-            vector<Word<T> *> wordList = Search(feature, enableFullSearch);
+            //cout << feature;
+            vector<Word<T> *> wordList = Search(feature, FULL_SEARCH);
             if (!wordList.empty())
             {
                 typename vector<Word<T> *>::iterator iter;
@@ -224,16 +224,11 @@ namespace Localization
             {
                 if (!fullSearch) // SIFT
                 {
-                    //vector<double> frontierDistances;
+                    //vector<float> frontierDistances;
                     CalculateFrontierDistances(node, feature);
                     node->SortChildNodes();
 
                     vector<Node<T> *> childList = node->GetChildNodes();
-                    //for (size_t i = 0; i < node->GetChildCount(); i++)
-                    //{
-                    //    cout << childList[i]->GetFrontier() << " ";
-                    //}
-                    //    cout << endl;
                     for (int i = 0; i < MAX_CHILD_NUM; i++)
                     {
                         Node<T> *lNode = childList[i];
@@ -284,12 +279,12 @@ namespace Localization
             while (!minNode->IsLeafNode())
             {
                 vector<Node<T> *> lChildNodes = minNode->GetChildNodes();
-                double minDist = numeric_limits<double>::max();
+                float minDist = numeric_limits<float>::max();
                 for (size_t i = 0; i < lChildNodes.size(); i++)
                 {
                     Node<T> *lNode = lChildNodes[i];
                     T lCenter = lNode->GetCenter();
-                    double lDist = Localization::CalculateDistance(lCenter, feature);
+                    float lDist = Localization::CalculateDistance(lCenter, feature);
                     if (lDist < minDist)
                     {
                         minDist = lDist; // perhaps reuse this variable...
@@ -333,7 +328,7 @@ namespace Localization
     };
 
     template <class T>
-    double KMeansCluster(vector<Word<T> *> wordList, cv::Mat* labels, cv::Mat* centers)
+    float KMeansCluster(vector<Word<T> *> wordList, cv::Mat* labels, cv::Mat* centers)
     {
         cv::Mat featureMat = MakeFeatureListFromWords(wordList);
         return cv::kmeans(featureMat, K_SPLIT, *labels, cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 10, 0.1), 3, cv::KMEANS_PP_CENTERS, *centers);
@@ -354,7 +349,7 @@ namespace Localization
     template<> cv::Mat MakeFeatureListFromWords(vector<Word<cv::Mat> *> wordList)
     {
         int featureDim = wordList[0]->GetCenter().cols;
-        cv::Mat featureList(wordList.size(), featureDim, CV_32FC1, cv::Scalar(0));
+        cv::Mat featureList(wordList.size(), featureDim, CV_32FC1, cv::Scalar(0)); // Exigee by K-Means
         for (size_t i = 0; i < wordList.size(); i++)
         {
             wordList[i]->GetCenter().copyTo(featureList.row(i));

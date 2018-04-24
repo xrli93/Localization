@@ -18,7 +18,7 @@ namespace Localization
         T mCenter{};
         std::vector<Node<T> *> mChildNodes;
         std::vector<Word<T> *> mWords;
-        double mDistFrontier = numeric_limits<double>::max(); // store frontier distances in SIFT search to use std::sort
+        float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in SIFT search to use std::sort
     public:
         Node()
         {
@@ -58,12 +58,12 @@ namespace Localization
             return mChildNodes;
         }
 
-        void SetFrontier(double frontier)
+        void SetFrontier(float frontier)
         {
             mDistFrontier = frontier;
         }
 
-        double GetFrontier() const
+        float GetFrontier() const
         {
             return mDistFrontier;
         }
@@ -90,8 +90,8 @@ namespace Localization
             std::sort(mChildNodes.begin(), mChildNodes.end(),
                 [feature](const Node<T>* lhs, const Node<T>* rhs)
             {
-                double lhsDist = Localization::CalculateDistance(lhs->GetCenter(), feature);
-                double rhsDist = Localization::CalculateDistance(rhs->GetCenter(), feature);
+                float lhsDist = Localization::CalculateDistance(lhs->GetCenter(), feature);
+                float rhsDist = Localization::CalculateDistance(rhs->GetCenter(), feature);
                 return lhsDist < rhsDist;
             });
         }
@@ -171,7 +171,7 @@ namespace Localization
         Mat distMat(nbChild, nbChild, CV_64FC1);
         // distances(i) = max(distMat(i,:)).
         // distances(i) < RADIUS means feature in the cell of i
-        vector<double> distances;
+        vector<float> distances;
         vector<Node<Mat> *> nodeList = node->GetChildNodes();
         for (size_t i = 0; i < nbChild; i++)
         {
@@ -182,22 +182,22 @@ namespace Localization
                 Node<Mat>* lNodeJ = nodeList[j];
                 Mat vecJFeature = feature - lNodeJ->GetCenter();
                 Mat vecIJ = lNodeJ->GetCenter() - lNodeI->GetCenter();
-                double normIJ = norm(vecIJ, NORM_L2);
-                double projection = vecJFeature.dot(vecIJ) / normIJ;
-                double distI2J = normIJ / 2 - projection;
-                distMat.at<double>(i, j) = distI2J;
-                distMat.at<double>(j, i) = distI2J;
+                float normIJ = norm(vecIJ, NORM_L2);
+                float projection = vecJFeature.dot(vecIJ) / normIJ;
+                float distI2J = normIJ / 2 - projection;
+                distMat.at<float>(i, j) = distI2J;
+                distMat.at<float>(j, i) = distI2J;
             }
         }
         for (size_t i = 0; i < nbChild; i++)
         {
-            distMat.at<double>(i, i) = 0;
+            distMat.at<float>(i, i) = 0;
             double min, max;
             minMaxIdx(distMat.row(i), &min, &max);
             distances.push_back(max);
             nodeList[i]->SetFrontier(max);
         }
-        //return vector<double>();
+        //return vector<float>();
     }
 }
 

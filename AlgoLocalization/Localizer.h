@@ -15,13 +15,13 @@ namespace Localization
     private:
         SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner{};
-        vector<double> secondVotes;
+        vector<float> secondVotes;
         vector<Mat> imageCollection;
         vector<int> labelCollection;
     public:
         Localizer()
         {
-            secondVotes = vector<double>(NUM_ROOMS, 0);
+            secondVotes = vector<float>(NUM_ROOMS, 0);
         };
 
 
@@ -74,7 +74,11 @@ namespace Localization
             }
             else
             {
-                cout << "Unformatted image" << endl;
+                cout << "Formatting image" << endl;
+                Mat lImg = Mat(240, 320, CV_8UC1);
+                resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
+                mSIFTLearner.LearnImage(img, label);
+                mColorLearner.LearnImage(img, label);
             }
         }
 
@@ -90,7 +94,7 @@ namespace Localization
         }
 
         // Second level voting for images on two feature spaces
-        int IdentifyRoom(vector<Mat> images, double* quality = NULL, bool verbose = false, int ref = -1)
+        int IdentifyRoom(vector<Mat> images, float* quality = NULL, bool verbose = false, int ref = -1)
         {
             fill(secondVotes.begin(), secondVotes.end(), 0);
             for (size_t i = 0; i < images.size(); i++)

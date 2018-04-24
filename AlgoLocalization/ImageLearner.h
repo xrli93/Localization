@@ -26,7 +26,7 @@ namespace Localization
 
             Mat features = CalculateFeatures(img);
             // Set origin node to zero
-            Mat origin = Mat(1, features.cols, CV_32FC1, Scalar(0.));
+            Mat origin = Mat(1, features.cols, CV_8UC1, Scalar(0.));
             mDict.SetRootNodeCenter(origin);
             for (size_t i = 0; i < features.rows; i++)
             {
@@ -38,10 +38,10 @@ namespace Localization
         }
 
         // First level voting
-        int IdentifyImage(Mat img, double* quality = NULL, int ref = -1) // DEBUG: ref permit to check the output
+        int IdentifyImage(Mat img, float* quality = NULL, int ref = -1) // DEBUG: ref permit to check the output
         {
             Mat features = CalculateFeatures(img);
-            vector<double> votes(NUM_ROOMS, 0);
+            vector<float> votes(NUM_ROOMS, 0);
             for (size_t i = 0; i < features.rows; i++)
             {
                 vector<Word<Mat> *> wordList = mDict.Search(features.row(i), FULL_SEARCH);
@@ -49,14 +49,14 @@ namespace Localization
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
                     // voting by words
-                    vector<double> lVote = (*iter)->Vote();
+                    vector<float> lVote = (*iter)->Vote();
                     transform(votes.begin(), votes.end(), lVote.begin(), votes.begin(),
                         plus<int>());
                 }
             }
             if (quality == NULL)
             {
-                quality = new double;
+                quality = new float;
             }
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             if (ref > -1 && result > -1 && result != ref) // wrong result
@@ -123,26 +123,40 @@ namespace Localization
 
     };
 
-    int CountVotes(vector<double>& votes, double* quality = NULL, double threshold = THRESHOLD_FIRST_VOTE)
+    int CountVotes(vector<float>& votes, float* quality = NULL, float threshold = THRESHOLD_FIRST_VOTE)
     {
         int result;
-        vector<double>::iterator maxIter = max_element(votes.begin(), votes.end());
-        double maxVote = *maxIter;
-        double sumVote = 0;
+        vector<float>::iterator maxIter = max_element(votes.begin(), votes.end());
+        float maxVote = *maxIter;
+        float sumVote = 0;
         result = distance(votes.begin(), maxIter);
         for (size_t i = 0; i < votes.size(); i++)
         {
             sumVote += votes[i];
         }
         *maxIter = 0; // set max vote to zero
-        double secondVote = *max_element(votes.begin(), votes.end());
+        float secondVote = *max_element(votes.begin(), votes.end());
         *maxIter = maxVote; // restore
-        double lQuality = (maxVote - secondVote) / sumVote;
+        float lQuality = (maxVote - secondVote) / sumVote;
         *quality = lQuality;
         return (lQuality > threshold) ? result : -1;
     }
 
 
+    //class SURFImageLearner : public ImageLearner<Mat>
+    //{
+    //    SURFImageLearner()
+    //    {
+    //        mDict.SetFeatureMethod(USE_SURF);
+    //        mDict.SetRadius();
+    //    }
+
+    //    SURFImageLearner(float radius)
+    //    {
+    //        mDict.SetFeatureMethod(USE_SURF);
+    //        mDict.SetRadius(radius);
+    //    }
+    //};
 
     class SIFTImageLearner : public ImageLearner<Mat>
     {
@@ -153,7 +167,7 @@ namespace Localization
             mDict.SetRadius();
         }
 
-        SIFTImageLearner(double radius)
+        SIFTImageLearner(float radius)
         {
             mDict.SetFeatureMethod(USE_SIFT);
             mDict.SetRadius(radius);
@@ -171,18 +185,26 @@ namespace Localization
             }
             if (ENABLE_CLAHE)
             {
-                Ptr<cv::CLAHE> clahe = createCLAHE(1.5, Size(8, 8));
+                Ptr<cv::CLAHE> clahe = createCLAHE(10, Size(8, 8));
                 clahe->apply(lImg, lImg);
             }
             //imshow(" ", lImg);
             //waitKey(100);
             Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+            //Ptr<Feature2D> f2d = xfeatures2d::SURF::create(400);
+            //Ptr<Feature2D> f2d = ORB::create(150);
 
             std::vector<KeyPoint> keypoints;
             f2d->detect(lImg, keypoints);
 
             Mat descriptors;
             f2d->compute(lImg, keypoints, descriptors);
+            if (descriptors.dims < 2)
+            {
+                cout << "Error getting desccriptors." << endl;
+            }
+            //cout << descriptors.type();
+            //cout << descriptors.size();
             return descriptors;
         }
 
@@ -211,7 +233,7 @@ namespace Localization
             int nBins = DIM_COLOR_HIST;
             float hRanges[] = { 0, 180 };
             const float* histRanges = { hRanges };
-            Mat features(0, nBins, CV_32FC1);
+            Mat features(0, nBins, CV_8UC1);
             vector<Mat> imgWindows = GetWindows(img);
             for (size_t i = 0; i < imgWindows.size(); i++)
             {
