@@ -6,6 +6,8 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "cereal\archives\portable_binary.hpp"
+#include "cereal\types\vector.hpp"
 
 using namespace std;
 using namespace cv;
@@ -20,12 +22,22 @@ namespace Localization
         T mCenter; // word center in feature space
         float mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
-        Node<T> * mNode; // Node which contains it
+
+        // Serialization
+        //friend class boost::serialization::access;
+        //template<typename Archive>
+        //void serialize(Archive& ar, const unsigned version)
+        //{
+        //    ar & mCenter & mRadius & mPresenceRooms;
+        //}
+
+        // cereal
+        friend class cereal::access;
 
     private:
         void initMPresenceRooms()
         {
-            for (int i = 0; i < NUM_ROOMS; i++)
+            for (int i = 0; i < NUM_ROOMS; ++i)
             {
                 mPresenceRooms.push_back(false);
             }
@@ -67,11 +79,6 @@ namespace Localization
             mCenter = center;
         }
 
-        //void SetParentNode(Localization::Node<T>* ptrNode)
-        //{
-        //    mNode = ptrNode;
-        //}
-
         vector<bool> GetLabels()
         {
             return mPresenceRooms;
@@ -99,7 +106,7 @@ namespace Localization
 
         void Display()
         {
-            for (int i = 0; i < NUM_ROOMS; i++)
+            for (int i = 0; i < NUM_ROOMS; ++i)
             {
                 cout << mPresenceRooms[i];
             }
@@ -111,14 +118,14 @@ namespace Localization
         {
             vector<float> scores(NUM_ROOMS, 0);
             int roomsSeen = 0;
-            for (size_t i = 0; i < NUM_ROOMS; i++)
+            for (size_t i = 0; i < NUM_ROOMS; ++i)
             {
                 roomsSeen += mPresenceRooms[i] ? 1 : 0;
             }
             // DEBUG: Only unique words vote
             //if (roomsSeen == 1)
             //{
-            //    for (size_t i = 0; i < scores.size(); i++)
+            //    for (size_t i = 0; i < scores.size(); ++i)
             //    {
             //        scores[i] = mPresenceRooms[i] ? 1 : 0;
             //    }
@@ -126,7 +133,7 @@ namespace Localization
             //}
             if (roomsSeen > 0)
             {
-                for (size_t i = 0; i < scores.size(); i++)
+                for (size_t i = 0; i < scores.size(); ++i)
                 {
                     scores[i] = mPresenceRooms[i] ? log(NUM_ROOMS * 1.0 / roomsSeen) / log(NUM_ROOMS) : 0;
                 }
@@ -157,7 +164,7 @@ namespace Localization
     {
         assert(x.size() == y.size());
         float norm = 0;
-        for (size_t i = 0; i != x.size(); i++)
+        for (size_t i = 0; i != x.size(); ++i)
         {
             norm += (x[i] - y[i]) * (x[i] - y[i]);
         }

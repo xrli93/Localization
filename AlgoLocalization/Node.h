@@ -19,6 +19,13 @@ namespace Localization
         std::vector<Node<T> *> mChildNodes;
         std::vector<Word<T> *> mWords;
         float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in SIFT search to use std::sort
+
+        friend class boost::serialization::access;
+        template <class Archive>
+        void serialize(Archive& ar, const unsigned version)
+        {
+            ar & mCenter & mChildNodes & mWords & mDistFrontier;
+        }
     public:
         Node()
         {
@@ -124,7 +131,7 @@ namespace Localization
             assert(NUM_ROOMS == 3);
             vector<int> count(WORD_TYPES, 0);
             vector<int> total(WORD_TYPES, 0);
-            for (size_t i = 0; i < mWords.size(); i++)
+            for (size_t i = 0; i < mWords.size(); ++i)
             {
                 Word<T> *ptrWord = mWords[i];
                 vector<bool> labels = ptrWord->GetLabels();
@@ -173,7 +180,7 @@ namespace Localization
         // distances(i) < RADIUS means feature in the cell of i
         vector<float> distances;
         vector<Node<Mat> *> nodeList = node->GetChildNodes();
-        for (size_t i = 0; i < nbChild; i++)
+        for (size_t i = 0; i < nbChild; ++i)
         {
             Node<Mat>* lNodeI = nodeList[i];
             //Mat VecIFeature = feature - lNodeI->GetCenter();
@@ -189,7 +196,7 @@ namespace Localization
                 distMat.at<float>(j, i) = distI2J;
             }
         }
-        for (size_t i = 0; i < nbChild; i++)
+        for (size_t i = 0; i < nbChild; ++i)
         {
             distMat.at<float>(i, i) = 0;
             double min, max;

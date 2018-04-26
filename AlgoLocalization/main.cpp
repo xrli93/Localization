@@ -1,8 +1,10 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <chrono>
 #include "Node.h"
+#include "serial.h"
 #include "TreeDict.h"
 #include "Constants.h"
 #include "Localizer.h"
@@ -11,7 +13,10 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/xfeatures2d.hpp"
-
+//#include <boost/archive/text_oarchive.hpp>
+//#include <boost/archive/text_iarchive.hpp>
+//#include <boost/archive/binary_oarchive.hpp>
+//#include <boost/archive/binary_iarchive.hpp>
 //#include <boost/serialization/base_object.hpp>
 
 using namespace std;
@@ -74,7 +79,7 @@ public:
         //srand(time(0));
         //random_shuffle(imgs->begin(), imgs->end());
         cout << "Training No. ";
-        for (size_t i = 0; i < nLearning; i++)
+        for (size_t i = 0; i < nLearning; ++i)
         {
             mLocalizer.LearnImage((*imgs)[i], label);
             cout << i << ", ";
@@ -132,7 +137,7 @@ public:
             while (result == -1 && i < imgs.size() && !halt)
             {
                 trys++;
-                result = mLocalizer.IdentityRoom(imgs[i++], &halt);
+                result = mLocalizer.IdentityRoom(imgs[++i], &halt);
             }
             auto t2 = std::chrono::high_resolution_clock::now();
             timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -175,9 +180,9 @@ public:
         random_shuffle(imgs.begin(), imgs.end());
         int correct = 0;
         int unIdentified = 0;
-        //for (size_t i = nLearning; i < nLearning + nTest; i++)
+        //for (size_t i = nLearning; i < nLearning + nTest; ++i)
         float timings = 0;
-        for (size_t i = 0; i < nTest; i++)
+        for (size_t i = 0; i < nTest; ++i)
         {
             vector<Mat> lImgs;
             for (size_t j = 0; j < nImgs; j++)
@@ -258,14 +263,14 @@ public:
     }
     void ReadImages()
     {
-        for (size_t i = 1; i <= TRAIN_SIZE; i++)
+        for (size_t i = 1; i <= TRAIN_SIZE; ++i)
         {
             salonImgs.push_back(imread(salonTrainPath + to_string(i) + ".jpg", IMREAD_COLOR));
             cuisineImgs.push_back(imread(cuisineTrainPath + to_string(i) + ".jpg", IMREAD_COLOR));
             reunionImgs.push_back(imread(reunionTrainPath + to_string(i) + ".jpg", IMREAD_COLOR));
             mangerImgs.push_back(imread(mangerTrainPath + to_string(i) + ".jpg", IMREAD_COLOR));
         }
-        for (size_t i = 1; i <= TEST_SIZE; i++)
+        for (size_t i = 1; i <= TEST_SIZE; ++i)
         {
             salonTest.push_back(imread(salonTestPath + to_string(i) + ".jpg", IMREAD_COLOR));
             cuisineTest.push_back(imread(cuisineTestPath + to_string(i) + ".jpg", IMREAD_COLOR));
@@ -282,28 +287,53 @@ public:
         ReadImages();
 
         cout << "Read all imgs" << endl;
-        for (size_t i = 0; i < nExperiments; i++)
+        for (size_t i = 0; i < nExperiments; ++i)
         {
-            Train(&salonImgs, SALON);
-            ReportDict();
-            Train(&cuisineImgs, CUISINE);
-            ReportDict();
-            Train(&reunionImgs, REUNION);
-            //Train(&mangerImgs, MANGER);
-            cout << " Training done " << endl;
-            ReportDict();
-            cout << endl << endl;
+
+            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\data.out";
+
+            //ifstream ifs(filename);
+            //boost::archive::text_iarchive ar(ifs);
+            ifstream ifs(filename, ios::binary);
+            boost::archive::binary_iarchive ar(ifs);
+            Localizer restored;
+            auto t1 = std::chrono::high_resolution_clock::now();
+            ar & restored;
+            auto t2 = std::chrono::high_resolution_clock::now();
+            double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            cout << "Model loaded " << timings << endl;
+
+            //auto t1 = std::chrono::high_resolution_clock::now();
+            //Train(&salonImgs, SALON);
+            //ReportDict();
+            //Train(&cuisineImgs, CUISINE);
+            //ReportDict();
+            //Train(&reunionImgs, REUNION);
+            ////Train(&mangerImgs, MANGER);
+            //cout << " Training done " << endl;
+            //ReportDict();
+            //cout << endl << endl;
+
+            //ofstream ofs(filename, ios::binary);
+            //boost::archive::binary_oarchive oa(ofs);
+            ////boost::archive::text_oarchive oa(ofs);
+            //oa << mLocalizer;
+            //cout << "Model saved" << endl;
+            //auto t2 = std::chrono::high_resolution_clock::now();
+            //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
 
             //ReportResults(salonTest, SALON, results);
             //ReportResults(cuisineTest, CUISINE, results);
             //ReportResults(reunionTest, REUNION, results);
 
-            ReportIncremental(salonTest, SALON, results);
-            ReportIncremental(cuisineTest, CUISINE, results);
-            ReportIncremental(reunionTest, REUNION, results);
-            //ReportResults(mangerTest, MANGER, results);
-            ReportDict();
-            cout << endl << endl;
+            //ReportIncremental(salonTest, SALON, results);
+            //ReportIncremental(cuisineTest, CUISINE, results);
+            //ReportIncremental(reunionTest, REUNION, results);
+
+            ////ReportResults(mangerTest, MANGER, results);
+            //ReportDict();
+            //cout << endl << endl;
 
         }
 
@@ -319,7 +349,7 @@ int main() {
     int nExperiments = N_EXPERIMENTS;
     vector<float> stats(NUM_ROOMS * 2 + 1, 0); // accuracy and unidentified
     vector<float> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
-    for (size_t i = 0; i < nExperiments; i++)
+    for (size_t i = 0; i < nExperiments; ++i)
     {
         cout << "---------------- Run " << i + 1 << " -----------------" << endl;
         Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
@@ -328,7 +358,7 @@ int main() {
     }
 
     cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-    for (size_t i = 0; i < stats.size(); i++)
+    for (size_t i = 0; i < stats.size(); ++i)
     {
         cout << stats[i] / nExperiments << ", ";
     }

@@ -2,9 +2,9 @@
 #include"TreeDict.h"
 #include "opencv2/xfeatures2d.hpp"
 #include "Constants.h"
+#include <boost/serialization/base_object.hpp>
 using namespace cv;
 using namespace Localization;
-
 
 namespace Localization
 {
@@ -15,6 +15,13 @@ namespace Localization
         TreeDict<T> mDict{};
         int mFeatureCount = 0;
         vector<int> mRoomFeaturesCount;
+
+        friend class boost::serialization::access;
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned version)
+        {
+            ar & mDict & mFeatureCount & mRoomFeaturesCount;
+        }
     public:
         ImageLearner() { mRoomFeaturesCount = vector<int>(NUM_ROOMS, 0); };
         ~ImageLearner() {};
@@ -30,7 +37,7 @@ namespace Localization
             // Set origin node to zero
             Mat origin = Mat(1, features.cols, CV_8UC1, Scalar(0.));
             mDict.SetRootNodeCenter(origin);
-            for (size_t i = 0; i < features.rows; i++)
+            for (size_t i = 0; i < features.rows; ++i)
             {
                 mDict.AddFeature(features.row(i), label);
                 //std::cout << "feature No." << i << endl;
@@ -46,7 +53,7 @@ namespace Localization
         {
             Mat features = CalculateFeatures(img);
             vector<float> votes(NUM_ROOMS, 0);
-            for (size_t i = 0; i < features.rows; i++)
+            for (size_t i = 0; i < features.rows; ++i)
             {
                 vector<Word<Mat> *> wordList = mDict.Search(features.row(i), FULL_SEARCH);
                 typename vector<Word<Mat> *>::iterator iter;
@@ -74,7 +81,7 @@ namespace Localization
         void ReducImage(Mat img, Mat& features, int result, int ref)
         {
             static int count = 0;
-            for (size_t i = 0; i < features.rows; i++)
+            for (size_t i = 0; i < features.rows; ++i)
             {
                 vector<Word<Mat> *> wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
                 vector<Word<Mat> *>::iterator iter;
@@ -93,7 +100,7 @@ namespace Localization
         // Actually can directly use this function....
         void ReducImage(Mat& features, int ref)
         {
-            for (size_t i = 0; i < features.rows; i++)
+            for (size_t i = 0; i < features.rows; ++i)
             {
                 mDict.AddFeature(features.row(i), ref);
             }
@@ -141,7 +148,7 @@ namespace Localization
         result = distance(votes.begin(), maxIter);
         if (sumVotes == 0)
         {
-            for (size_t i = 0; i < votes.size(); i++)
+            for (size_t i = 0; i < votes.size(); ++i)
             {
                 lSumVote += votes[i];
             }
@@ -162,21 +169,6 @@ namespace Localization
         return (lQuality >= threshold) ? result : -1;
     }
 
-
-    //class SURFImageLearner : public ImageLearner<Mat>
-    //{
-    //    SURFImageLearner()
-    //    {
-    //        mDict.SetFeatureMethod(USE_SURF);
-    //        mDict.SetRadius();
-    //    }
-
-    //    SURFImageLearner(float radius)
-    //    {
-    //        mDict.SetFeatureMethod(USE_SURF);
-    //        mDict.SetRadius(radius);
-    //    }
-    //};
 
     class SIFTImageLearner : public ImageLearner<Mat>
     {
@@ -254,7 +246,7 @@ namespace Localization
             const float* histRanges = { hRanges };
             Mat features(0, nBins, CV_8UC1);
             vector<Mat> imgWindows = GetWindows(img);
-            for (size_t i = 0; i < imgWindows.size(); i++)
+            for (size_t i = 0; i < imgWindows.size(); ++i)
             {
                 Mat img = imgWindows[i];
                 Mat hue = GetHue(img);
@@ -287,7 +279,7 @@ namespace Localization
         {
             int nX = (int)((width - size) / stride);
             int nY = (int)((height - size) / stride);
-            for (size_t i = 0; i < nX; i++)
+            for (size_t i = 0; i < nX; ++i)
             {
                 for (size_t j = 0; j < nY; j++)
                 {

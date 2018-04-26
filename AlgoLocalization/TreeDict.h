@@ -19,11 +19,13 @@ namespace Localization
         int mFeatureMethod;
         float mRadius = RADIUS;
         //float mFrontier = RADIUS * 5;
-        int mNMaxWords = NUM_MAX_WORDS;
-        // DEBUG
-        int v1 = 0;
-        int v2 = 0;
-        int v12 = 0;
+
+        friend class boost::serialization::access;
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned version)
+        {
+            ar & mRootNode & mFeatureMethod & mRadius;
+        }
     public:
         TreeDict()
         {
@@ -61,12 +63,6 @@ namespace Localization
             mRadius = (mFeatureMethod == USE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
         }
 
-
-        void SetNMaxWords(int nMaxWords)
-        {
-            mNMaxWords = nMaxWords;
-        }
-
         void SetFeatureMethod(int featureMethod)
         {
             mFeatureMethod = featureMethod;
@@ -86,7 +82,7 @@ namespace Localization
             {
                 int sumWords = 0;
                 vector<Node<T> *> childList = node->GetChildNodes();
-                for (size_t i = 0; i < childList.size(); i++)
+                for (size_t i = 0; i < childList.size(); ++i)
                 {
                     Node<T> *lNode = childList[i];
                     sumWords += CountWords(lNode);
@@ -106,7 +102,7 @@ namespace Localization
             {
                 vector<int> total(WORD_TYPES, 0);
                 vector<Node<T> *> childList = node->GetChildNodes();
-                for (size_t i = 0; i < childList.size(); i++)
+                for (size_t i = 0; i < childList.size(); ++i)
                 {
                     Node<T> *lNode = childList[i];
                     vector<int> lCount = AnalyseWords(lNode);
@@ -131,7 +127,7 @@ namespace Localization
             {
                 int sumNodes = 0;
                 vector<Node<T> *> childList = node->GetChildNodes();
-                for (size_t i = 0; i < childList.size(); i++)
+                for (size_t i = 0; i < childList.size(); ++i)
                 {
                     Node<T> *lNode = childList[i];
                     sumNodes += CountNodes(lNode);
@@ -152,7 +148,7 @@ namespace Localization
             if (!node->IsLeafNode())
             {
                 vector<Node<T> *> childList = node->GetChildNodes();
-                for (size_t i = 0; i < childList.size(); i++)
+                for (size_t i = 0; i < childList.size(); ++i)
                 {
                     Node<T> *lNode = childList[i];
                     RemoveCommonWords(lNode);
@@ -191,7 +187,7 @@ namespace Localization
             {
                 Word<T> *newWord = new Word<T>(feature, indexRoom, mRadius);
                 Node<T> *node = AddWordToDict(newWord);
-                if (node->GetWordsCount() > mNMaxWords) // Many words necessary to create new nodes
+                if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
                 {
                     Expand(node);
                 }
@@ -211,7 +207,7 @@ namespace Localization
             if (node->IsLeafNode())
             {
                 vector<Word<T> *> lWordsInNode = node->GetWords();
-                for (size_t i = 0; i < lWordsInNode.size(); i++)
+                for (size_t i = 0; i < lWordsInNode.size(); ++i)
                 {
                     Word<T> *lWord = lWordsInNode[i];
                     if (lWord->ContainFeature(feature))
@@ -229,7 +225,7 @@ namespace Localization
                     node->SortChildNodes();
 
                     vector<Node<T> *> childList = node->GetChildNodes();
-                    for (int i = 0; i < MAX_CHILD_NUM; i++)
+                    for (int i = 0; i < MAX_CHILD_NUM; ++i)
                     {
                         Node<T> *lNode = childList[i];
                         if (lNode->GetFrontier() < mRadius)
@@ -244,14 +240,14 @@ namespace Localization
                 {
                     node->SortChildNodes(feature);
                     vector<Node<T> *> childList = node->GetChildNodes();
-                    for (int i = 0; i < MAX_CHILD_NUM; i++)
+                    for (int i = 0; i < MAX_CHILD_NUM; ++i)
                     {
                         vector<Word<T> *> childWordList = Search(childList[i], feature, fullSearch);
                         wordList.insert(wordList.end(), childWordList.begin(), childWordList.end());
                     }
                 }
                 //vector<Node<T> *> childList = node->GetChildNodes();
-                //for (int i = 0; i < MAX_CHILD_NUM; i++)
+                //for (int i = 0; i < MAX_CHILD_NUM; ++i)
                 //{
                 //    Node<T> *lNode = childList[i];
                 //    //TODO: Optimization. Filliat 08. What is frontier distance?
@@ -280,7 +276,7 @@ namespace Localization
             {
                 vector<Node<T> *> lChildNodes = minNode->GetChildNodes();
                 float minDist = numeric_limits<float>::max();
-                for (size_t i = 0; i < lChildNodes.size(); i++)
+                for (size_t i = 0; i < lChildNodes.size(); ++i)
                 {
                     Node<T> *lNode = lChildNodes[i];
                     T lCenter = lNode->GetCenter();
@@ -308,7 +304,7 @@ namespace Localization
             vector<Word<T> *> lWordList = node->GetWords();
 
             KMeansCluster(lWordList, &labels, &centers);
-            for (size_t i = 0; i < centers.rows; i++)
+            for (size_t i = 0; i < centers.rows; ++i)
             {
                 Node<cv::Mat> *newNode = new Node<cv::Mat>(centers.row(i));
                 for (int wordsIter = 0; wordsIter < lWordList.size(); wordsIter++)
@@ -338,7 +334,7 @@ namespace Localization
     cv::Mat MakeFeatureListFromWords(vector<Word<T> *> wordList)
     {
         vector<T> featureList;
-        for (size_t i = 0; i < wordList.size(); i++)
+        for (size_t i = 0; i < wordList.size(); ++i)
         {
             featureList.push_back(wordList[i]->GetCenter());
         }
@@ -350,7 +346,7 @@ namespace Localization
     {
         int featureDim = wordList[0]->GetCenter().cols;
         cv::Mat featureList(wordList.size(), featureDim, CV_32FC1, cv::Scalar(0)); // Exigee by K-Means
-        for (size_t i = 0; i < wordList.size(); i++)
+        for (size_t i = 0; i < wordList.size(); ++i)
         {
             wordList[i]->GetCenter().copyTo(featureList.row(i));
         }

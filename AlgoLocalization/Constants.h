@@ -1,7 +1,6 @@
 #pragma once
 
 using namespace std;
-
 // ---------------- Dictionary parameters ----------------
 #define RADIUS 50.0
 #define RADIUS_SIFT 180 // SIFT
@@ -20,7 +19,7 @@ using namespace std;
 
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.1
-#define THRESHOLD_SECOND_VOTE 0.1
+#define THRESHOLD_SECOND_VOTE 0.25
 #define DIM_COLOR_HIST 16
 #define DIM_SIFT 128
 #define USE_SIFT 1
@@ -58,8 +57,8 @@ const int mNorm = NORM_KL;
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1
-#define N_EXPERIMENTS 3
-#define WEIGHT_COLOR 0.75 // 0.5
+#define N_EXPERIMENTS 1
+#define WEIGHT_COLOR 0.60 // 0.5
 
 
 // Datasets 
@@ -71,6 +70,7 @@ string salonTestPath;
 string cuisineTestPath;
 string reunionTestPath;
 string mangerTestPath;
+#define FOLDER_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\"
 #define SALON_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_train\\"
 #define CUISINE_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_train\\"
 #define REUNION_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\reunion_train\\"

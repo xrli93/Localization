@@ -17,6 +17,13 @@ namespace Localization
         ColorHistogramLearner mColorLearner;
         vector<Mat> imageCollection;
         vector<int> labelCollection;
+        
+        friend class boost::serialization::access;
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned version)
+        {
+            ar & mSIFTLearner & mColorLearner & imageCollection & labelCollection;
+        }
     public:
         Localizer() { };
 
@@ -79,7 +86,7 @@ namespace Localization
 
         void LearnCollection()
         {
-            for (size_t i = 0; i < imageCollection.size(); i++)
+            for (size_t i = 0; i < imageCollection.size(); ++i)
             {
                 Mat img = imageCollection[i];
                 int label = labelCollection[i];
@@ -131,7 +138,7 @@ namespace Localization
                 secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
             }
             double sumSecondVotes = 0;
-            for (size_t i = 0; i < secondVotes.size(); i++)
+            for (size_t i = 0; i < secondVotes.size(); ++i)
             {
                 sumSecondVotes += secondVotes[i];
             }
@@ -152,7 +159,7 @@ namespace Localization
         int IdentifyRoom(vector<Mat> images, float* quality = NULL, bool verbose = false, int ref = -1)
         {
             vector<float> secondVotes(NUM_ROOMS, 0);
-            for (size_t i = 0; i < images.size(); i++)
+            for (size_t i = 0; i < images.size(); ++i)
             {
                 Mat img = images[i];
                 int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
