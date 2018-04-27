@@ -2,7 +2,7 @@
 #include"TreeDict.h"
 #include "opencv2/xfeatures2d.hpp"
 #include "Constants.h"
-#include <boost/serialization/base_object.hpp>
+//#include <boost/serialization/base_object.hpp>
 using namespace cv;
 using namespace Localization;
 
@@ -16,11 +16,11 @@ namespace Localization
         int mFeatureCount = 0;
         vector<int> mRoomFeaturesCount;
 
-        friend class boost::serialization::access;
-        template<typename Archive>
-        void serialize(Archive& ar, const unsigned version)
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
         {
-            ar & mDict & mFeatureCount & mRoomFeaturesCount;
+            archive(mDict, mFeatureCount, mRoomFeaturesCount);
         }
     public:
         ImageLearner() { mRoomFeaturesCount = vector<int>(NUM_ROOMS, 0); };
@@ -49,14 +49,14 @@ namespace Localization
         }
 
         // First level voting
-        int IdentifyImage(Mat img, float* quality = NULL, int ref = -1) // DEBUG: ref permit to check the output
+        int IdentifyImage(Mat img, shared_ptr<float> quality = NULL, int ref = -1) // DEBUG: ref permit to check the output
         {
             Mat features = CalculateFeatures(img);
             vector<float> votes(NUM_ROOMS, 0);
             for (size_t i = 0; i < features.rows; ++i)
             {
-                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), FULL_SEARCH);
-                typename vector<Word<Mat> *>::iterator iter;
+                vector<shared_ptr<Word<Mat> > > wordList = mDict.Search(features.row(i), FULL_SEARCH);
+                typename vector<shared_ptr<Word<Mat> > >::iterator iter;
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
                     // voting by words
@@ -67,7 +67,7 @@ namespace Localization
             }
             if (quality == NULL)
             {
-                float* quality = new float;
+                shared_ptr<float> quality = make_shared<float>();
             }
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             if (ref > -1 && result > -1 && result != ref) // wrong result
@@ -83,11 +83,11 @@ namespace Localization
             static int count = 0;
             for (size_t i = 0; i < features.rows; ++i)
             {
-                vector<Word<Mat> *> wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
-                vector<Word<Mat> *>::iterator iter;
+                vector<shared_ptr<Word<Mat> > > wordList = mDict.Search(features.row(i), MAX_CHILD_NUM, FULL_SEARCH);
+                vector<shared_ptr<Word<Mat> > >::iterator iter;
                 for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
-                    Word<Mat> *word = (*iter);
+                    shared_ptr<Word<Mat> > word = (*iter);
                     if (word->GetLabels()[ref] != true)
                     {
                         cout << to_string(++count) << ", ";
@@ -139,7 +139,7 @@ namespace Localization
 
     };
 
-    int CountVotes(vector<float>& votes, float* quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
+    int CountVotes(vector<float>& votes, shared_ptr<float> quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
     {
         int result;
         vector<float>::iterator maxIter = max_element(votes.begin(), votes.end());
@@ -196,7 +196,7 @@ namespace Localization
             }
             if (ENABLE_CLAHE)
             {
-                Ptr<cv::CLAHE> clahe = createCLAHE(10, Size(8, 8));
+                Ptr<CLAHE> clahe = createCLAHE(10, Size(8, 8));
                 clahe->apply(lImg, lImg);
             }
             //imshow(" ", lImg);

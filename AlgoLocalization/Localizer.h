@@ -18,11 +18,11 @@ namespace Localization
         vector<Mat> imageCollection;
         vector<int> labelCollection;
         
-        friend class boost::serialization::access;
-        template<typename Archive>
-        void serialize(Archive& ar, const unsigned version)
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
         {
-            ar & mSIFTLearner & mColorLearner & imageCollection & labelCollection;
+            archive(mSIFTLearner, mColorLearner, imageCollection, labelCollection);
         }
     public:
         Localizer() { };
@@ -117,9 +117,9 @@ namespace Localization
         {
             static vector<float> secondVotes(NUM_ROOMS, 0);
             static int trys = 0;
-            float quality = 0;
-            int SIFTVote = mSIFTLearner.IdentifyImage(img, &quality, ref);
-            int ColorVote = mColorLearner.IdentifyImage(img, &quality, ref);
+            shared_ptr<float> quality = make_shared<float>(0.);
+            int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
+            int ColorVote = mColorLearner.IdentifyImage(img, quality, ref);
             double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
             if (SIFTVote > -1)
             {
@@ -143,8 +143,8 @@ namespace Localization
                 sumSecondVotes += secondVotes[i];
             }
             //int result = Localization::CountVotes(secondVotes, &quality, THRESHOLD_SECOND_VOTE, sumFactor * (trys+1));
-            int result = Localization::CountVotes(secondVotes, &quality, THRESHOLD_SECOND_VOTE);
-            if ((quality >= THRESHOLD_SECOND_VOTE && sumSecondVotes > 1) || ++trys >= NUM_MAX_IMAGES)
+            int result = Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
+            if ((*quality >= THRESHOLD_SECOND_VOTE && sumSecondVotes > 1) || ++trys >= NUM_MAX_IMAGES)
             {
                 fill(secondVotes.begin(), secondVotes.end(), 0);
                 trys = 0;
@@ -156,7 +156,7 @@ namespace Localization
 
         // Second level voting for images on two feature spaces
         // Function for testing on databases
-        int IdentifyRoom(vector<Mat> images, float* quality = NULL, bool verbose = false, int ref = -1)
+        int IdentifyRoom(vector<Mat> images, shared_ptr<float> quality = NULL, bool verbose = false, int ref = -1)
         {
             vector<float> secondVotes(NUM_ROOMS, 0);
             for (size_t i = 0; i < images.size(); ++i)

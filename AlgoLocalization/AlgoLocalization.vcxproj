@@ -23,6 +23,7 @@
     <ProjectGuid>{1B01F531-E03A-409C-9066-4DE71D6DD106}</ProjectGuid>
     <RootNamespace>AlgoLocalization</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>AlgoLocalizationNew</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -200,6 +201,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="ImageLearner.h" />
     <ClInclude Include="Localizer.h" />
+    <ClInclude Include="matcerealisation.hpp" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="serial.h" />
     <ClInclude Include="TreeDict.h" />

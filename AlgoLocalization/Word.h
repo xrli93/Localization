@@ -2,13 +2,14 @@
 #include<vector>
 #include<assert.h>
 #include<cmath>
+#include<memory>
 #include "Constants.h"
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "cereal\archives\portable_binary.hpp"
 #include "cereal\types\vector.hpp"
-
+#include "cereal\types\memory.hpp"
 using namespace std;
 using namespace cv;
 
@@ -23,6 +24,13 @@ namespace Localization
         float mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
 
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
+        {
+            archive(mCenter, mRadius, mPresenceRooms);
+        }
+
         // Serialization
         //friend class boost::serialization::access;
         //template<typename Archive>
@@ -32,7 +40,6 @@ namespace Localization
         //}
 
         // cereal
-        friend class cereal::access;
 
     private:
         void initMPresenceRooms()
@@ -177,7 +184,7 @@ namespace Localization
         return abs(x - y);
     }
 
-    template<> float CalculateDistance(const cv::Mat& x, const cv::Mat& y)
+    template<> float CalculateDistance(const Mat& x, const Mat& y)
     {
         if (x.cols == DIM_SIFT || x.cols != DIM_COLOR_HIST) //  Sift features
         {

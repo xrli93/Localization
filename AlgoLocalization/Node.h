@@ -16,15 +16,15 @@ namespace Localization
     {
     private:
         T mCenter{};
-        std::vector<Node<T> *> mChildNodes;
-        std::vector<Word<T> *> mWords;
+        vector<shared_ptr<Node<T> > > mChildNodes;
+        vector<shared_ptr<Word<T> > > mWords;
         float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in SIFT search to use std::sort
 
-        friend class boost::serialization::access;
-        template <class Archive>
-        void serialize(Archive& ar, const unsigned version)
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
         {
-            ar & mCenter & mChildNodes & mWords & mDistFrontier;
+            archive(mCenter, mChildNodes, mWords, mDistFrontier);
         }
     public:
         Node()
@@ -35,16 +35,16 @@ namespace Localization
 
         ~Node()
         {
-            mChildNodes.clear();
-            mWords.clear();
+            //mChildNodes.clear();
+            //mWords.clear();
         }
 
-        void AddWord(Word<T> *word)
+        void AddWord(shared_ptr<Word<T> > word)
         {
             mWords.push_back(word);
         }
 
-        void AddChildNode(Node<T> *node)
+        void AddChildNode(shared_ptr<Node<T> > node)
         {
             mChildNodes.push_back(node);
         }
@@ -55,12 +55,12 @@ namespace Localization
                 mWords.pop_back();
         }
 
-        vector<Word<T> *> GetWords() const
+        vector<shared_ptr<Word<T> > > GetWords() const
         {
             return mWords;
         }
 
-        vector<Node<T> *> GetChildNodes() const
+        vector<shared_ptr<Node<T> > > GetChildNodes() const
         {
             return mChildNodes;
         }
@@ -85,7 +85,7 @@ namespace Localization
         void RemoveCommonWords()
         {
             mWords.erase(remove_if(mWords.begin(), mWords.end(),
-                [](Word<T>* pWord) {return pWord->PresentInAll(); }),
+                [](shared_ptr<Word<T> > pWord) {return pWord->PresentInAll(); }),
                 mWords.end());
         }
 
@@ -95,7 +95,7 @@ namespace Localization
         void SortChildNodes(T feature)
         {
             std::sort(mChildNodes.begin(), mChildNodes.end(),
-                [feature](const Node<T>* lhs, const Node<T>* rhs)
+                [feature](const shared_ptr<Node<T> > lhs, const shared_ptr<Node<T> > rhs)
             {
                 float lhsDist = Localization::CalculateDistance(lhs->GetCenter(), feature);
                 float rhsDist = Localization::CalculateDistance(rhs->GetCenter(), feature);
@@ -107,7 +107,7 @@ namespace Localization
         void SortChildNodes()
         {
             std::sort(mChildNodes.begin(), mChildNodes.end(),
-                [](const Node<T>* lhs, const Node<T>* rhs)
+                [](const shared_ptr<Node<T> > lhs, const shared_ptr<Node<T> > rhs)
             {
                 return (lhs->GetFrontier() < rhs->GetFrontier());
             });
@@ -133,7 +133,7 @@ namespace Localization
             vector<int> total(WORD_TYPES, 0);
             for (size_t i = 0; i < mWords.size(); ++i)
             {
-                Word<T> *ptrWord = mWords[i];
+                shared_ptr<Word<T> > ptrWord = mWords[i];
                 vector<bool> labels = ptrWord->GetLabels();
                 bool salon = labels[SALON];
                 bool cuisine = labels[CUISINE];
@@ -166,10 +166,10 @@ namespace Localization
 
     };
     template <class T>
-    void CalculateFrontierDistances(Node<T>* node, T feature) {}
+    void CalculateFrontierDistances(shared_ptr<Node<T> > node, T feature) {}
 
     template<>
-    void CalculateFrontierDistances(Node<Mat>* node, Mat feature)
+    void CalculateFrontierDistances(shared_ptr<Node<Mat> > node, Mat feature)
     {
         int nbChild = node->GetChildCount();
         // distMat(i,j) is the distance from feature to frontier between i and j
@@ -179,14 +179,14 @@ namespace Localization
         // distances(i) = max(distMat(i,:)).
         // distances(i) < RADIUS means feature in the cell of i
         vector<float> distances;
-        vector<Node<Mat> *> nodeList = node->GetChildNodes();
+        vector<shared_ptr<Node<Mat> > > nodeList = node->GetChildNodes();
         for (size_t i = 0; i < nbChild; ++i)
         {
-            Node<Mat>* lNodeI = nodeList[i];
+            shared_ptr<Node<Mat> > lNodeI = nodeList[i];
             //Mat VecIFeature = feature - lNodeI->GetCenter();
             for (size_t j = 0; j < i; j++)
             {
-                Node<Mat>* lNodeJ = nodeList[j];
+                shared_ptr<Node<Mat> > lNodeJ = nodeList[j];
                 Mat vecJFeature = feature - lNodeJ->GetCenter();
                 Mat vecIJ = lNodeJ->GetCenter() - lNodeI->GetCenter();
                 float normIJ = norm(vecIJ, NORM_L2);

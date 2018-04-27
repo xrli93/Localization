@@ -273,6 +273,9 @@
     <ClInclude Include="cereal\macros.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="matcerealisation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

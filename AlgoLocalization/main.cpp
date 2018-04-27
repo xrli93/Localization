@@ -13,12 +13,8 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/xfeatures2d.hpp"
-//#include <boost/archive/text_oarchive.hpp>
-//#include <boost/archive/text_iarchive.hpp>
-//#include <boost/archive/binary_oarchive.hpp>
-//#include <boost/archive/binary_iarchive.hpp>
-//#include <boost/serialization/base_object.hpp>
-
+#include "cereal\archives\portable_binary.hpp"
+#include "matcerealisation.hpp"
 using namespace std;
 using namespace Localization;
 using namespace cv;
@@ -137,7 +133,7 @@ public:
             while (result == -1 && i < imgs.size() && !halt)
             {
                 trys++;
-                result = mLocalizer.IdentityRoom(imgs[++i], &halt);
+                result = mLocalizer.IdentityRoom(imgs[i++], &halt);
             }
             auto t2 = std::chrono::high_resolution_clock::now();
             timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -191,20 +187,20 @@ public:
                 lImgs.push_back(lImg);
             }
 
-            float quality = 0;
+            shared_ptr<float> quality = make_shared<float>(0);
             auto t1 = std::chrono::high_resolution_clock::now();
             int result;
 
             if (ENABLE_CORRECTION)
             {
                 // modify words + delete words in all words
-                result = mLocalizer.IdentifyRoom(lImgs, &quality, VERBOSE, label);
+                result = mLocalizer.IdentifyRoom(lImgs, quality, VERBOSE, label);
             }
             else
             {
                 // no feedback, no modification  
                 // TODO: add posteriori modification
-                result = mLocalizer.IdentifyRoom(lImgs, &quality, VERBOSE);
+                result = mLocalizer.IdentifyRoom(lImgs, quality, VERBOSE);
             }
 
             //cout << "Room detected: " << result << " For " << i;
@@ -257,8 +253,8 @@ public:
         Mat lImg = Mat(240, 320, CV_8UC1);
         resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
 
-        //cv::GaussianBlur(lImg, lImg, cv::Size(0, 0), 3);
-        //cv::addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
+        //GaussianBlur(lImg, lImg, Size(0, 0), 3);
+        //addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
         return lImg;
     }
     void ReadImages()
@@ -290,50 +286,49 @@ public:
         for (size_t i = 0; i < nExperiments; ++i)
         {
 
-            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\data.out";
+            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal.out";
+            {
+                auto t1 = std::chrono::high_resolution_clock::now();
+                ifstream ifs(filename, ios::binary);
+                cereal::PortableBinaryInputArchive iarchive(ifs);
+                iarchive(mLocalizer);
+                auto t2 = std::chrono::high_resolution_clock::now();
+                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                cout << "Model loaded " << timings << endl;
+            }
 
-            //ifstream ifs(filename);
-            //boost::archive::text_iarchive ar(ifs);
-            ifstream ifs(filename, ios::binary);
-            boost::archive::binary_iarchive ar(ifs);
-            Localizer restored;
-            auto t1 = std::chrono::high_resolution_clock::now();
-            ar & restored;
-            auto t2 = std::chrono::high_resolution_clock::now();
-            double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            cout << "Model loaded " << timings << endl;
+            // Training and saving dict
+            //{
+            //    Train(&salonImgs, SALON);
+            //    ReportDict();
+            //    Train(&cuisineImgs, CUISINE);
+            //    ReportDict();
+            //    Train(&reunionImgs, REUNION);
+            //    //Train(&mangerImgs, MANGER);
+            //    cout << " Training done " << endl;
+            //    ReportDict();
+            //    cout << endl << endl;
 
-            //auto t1 = std::chrono::high_resolution_clock::now();
-            //Train(&salonImgs, SALON);
-            //ReportDict();
-            //Train(&cuisineImgs, CUISINE);
-            //ReportDict();
-            //Train(&reunionImgs, REUNION);
-            ////Train(&mangerImgs, MANGER);
-            //cout << " Training done " << endl;
-            //ReportDict();
-            //cout << endl << endl;
+            //    auto t1 = std::chrono::high_resolution_clock::now();
+            //    {
+            //        ofstream ofs(filename, ios::binary);
+            //        cereal::PortableBinaryOutputArchive oarchive(ofs);
+            //        oarchive(mLocalizer);
+            //    }
+            //    auto t2 = std::chrono::high_resolution_clock::now();
+            //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            //    cout << "Model saved"  << timings << endl;
+            //}
 
-            //ofstream ofs(filename, ios::binary);
-            //boost::archive::binary_oarchive oa(ofs);
-            ////boost::archive::text_oarchive oa(ofs);
-            //oa << mLocalizer;
-            //cout << "Model saved" << endl;
-            //auto t2 = std::chrono::high_resolution_clock::now();
-            //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-
-
-            //ReportResults(salonTest, SALON, results);
-            //ReportResults(cuisineTest, CUISINE, results);
-            //ReportResults(reunionTest, REUNION, results);
-
-            //ReportIncremental(salonTest, SALON, results);
-            //ReportIncremental(cuisineTest, CUISINE, results);
-            //ReportIncremental(reunionTest, REUNION, results);
-
-            ////ReportResults(mangerTest, MANGER, results);
-            //ReportDict();
-            //cout << endl << endl;
+            // Testing results
+            {
+                ReportIncremental(salonTest, SALON, results);
+                ReportIncremental(cuisineTest, CUISINE, results);
+                ReportIncremental(reunionTest, REUNION, results);
+            }
+            //ReportResults(mangerTest, MANGER, results);
+            ReportDict();
+            cout << endl << endl;
 
         }
 
