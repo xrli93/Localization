@@ -16,8 +16,8 @@ namespace Localization
     {
     private:
         T mCenter{};
-        vector<shared_ptr<Node<T> > > mChildNodes;
-        vector<shared_ptr<Word<T> > > mWords;
+        vector<shared_ptr<Node<T>>> mChildNodes;
+        vector<shared_ptr<Word<T>>> mWords;
         float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in SIFT search to use std::sort
 
         friend class cereal::access;
@@ -128,7 +128,7 @@ namespace Localization
         // TODO: make general
         vector<int> AnalyseWords()
         {
-            assert(NUM_ROOMS == 3);
+            assert(GetNumRoom() == 3);
             vector<int> count(WORD_TYPES, 0);
             vector<int> total(WORD_TYPES, 0);
             for (size_t i = 0; i < mWords.size(); ++i)

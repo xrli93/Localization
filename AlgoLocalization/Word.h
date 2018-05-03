@@ -44,7 +44,7 @@ namespace Localization
     private:
         void initMPresenceRooms()
         {
-            for (int i = 0; i < NUM_ROOMS; ++i)
+            for (int i = 0; i < GetNumRoom(); ++i)
             {
                 mPresenceRooms.push_back(false);
             }
@@ -93,7 +93,7 @@ namespace Localization
 
         void UpdateLabel(int indexRoom)
         {
-            if (indexRoom < NUM_ROOMS)
+            if (indexRoom < GetNumRoom())
             {
                 mPresenceRooms[indexRoom] = true;
             }
@@ -113,7 +113,7 @@ namespace Localization
 
         void Display()
         {
-            for (int i = 0; i < NUM_ROOMS; ++i)
+            for (int i = 0; i < GetNumRoom(); ++i)
             {
                 cout << mPresenceRooms[i];
             }
@@ -123,9 +123,9 @@ namespace Localization
         // Vote using inverse document frequency 
         vector<float> Vote()
         {
-            vector<float> scores(NUM_ROOMS, 0);
+            vector<float> scores(GetNumRoom(), 0);
             int roomsSeen = 0;
-            for (size_t i = 0; i < NUM_ROOMS; ++i)
+            for (size_t i = 0; i < GetNumRoom(); ++i)
             {
                 roomsSeen += mPresenceRooms[i] ? 1 : 0;
             }
@@ -142,7 +142,7 @@ namespace Localization
             {
                 for (size_t i = 0; i < scores.size(); ++i)
                 {
-                    scores[i] = mPresenceRooms[i] ? log(NUM_ROOMS * 1.0 / roomsSeen) / log(NUM_ROOMS) : 0;
+                    scores[i] = mPresenceRooms[i] ? log(GetNumRoom() * 1.0 / roomsSeen) / log(GetNumRoom()) : 0;
                 }
             }
             return scores;

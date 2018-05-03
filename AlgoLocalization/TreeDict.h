@@ -7,6 +7,7 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "omp.h"
 using namespace std;
 
 namespace Localization
@@ -202,12 +203,18 @@ namespace Localization
             if (node->IsLeafNode())
             {
                 vector<shared_ptr<Word<T> > > lWordsInNode = node->GetWords();
-                for (size_t i = 0; i < lWordsInNode.size(); ++i)
+#pragma omp parallel for
+                for (int i = 0; i < lWordsInNode.size(); ++i)
                 {
-                    shared_ptr<Word<T> > lWord= lWordsInNode[i];
-                    if (lWord->ContainFeature(feature))
+                    //shared_ptr<Word<T> > lWord = lWordsInNode[i];
+                    //if (lWord->ContainFeature(feature))
+                    //{
+                    //    wordList.push_back(lWord);
+                    //}
+                    if (lWordsInNode[i]->ContainFeature(feature))
+#pragma omp critical
                     {
-                        wordList.push_back(lWord);
+                        wordList.push_back(lWordsInNode[i]);
                     }
                 }
             }
@@ -255,7 +262,8 @@ namespace Localization
             {
                 vector<shared_ptr<Node<T> > > lChildNodes = minNode->GetChildNodes();
                 float minDist = numeric_limits<float>::max();
-                for (size_t i = 0; i < lChildNodes.size(); ++i)
+//#pragma omp parallel for
+                for (int i = 0; i < lChildNodes.size(); ++i)
                 {
                     shared_ptr<Node<T> > lNode = lChildNodes[i];
                     T lCenter = lNode->GetCenter();
@@ -284,10 +292,10 @@ namespace Localization
 
             KMeansCluster(lWordList, labels, centers);
             //cout << labels.cols;
-            for (size_t i = 0; i < centers->rows; ++i)
+            for (int i = 0; i < centers->rows; ++i)
             {
                 shared_ptr<Node<Mat> >  newNode = make_shared<Node<Mat> >(centers->row(i));
-                for (int wordsIter = 0; wordsIter < lWordList.size(); wordsIter++)
+                for (int wordsIter = 0; wordsIter < lWordList.size(); ++wordsIter)
                 {
                     if (labels->at<int>(wordsIter, 0) == i)
                     {
@@ -314,6 +322,7 @@ namespace Localization
     Mat MakeFeatureListFromWords(vector<shared_ptr<Word<T> > > wordList)
     {
         vector<T> featureList;
+#pragma omp parallel for
         for (size_t i = 0; i < wordList.size(); ++i)
         {
             featureList.push_back(wordList[i]->GetCenter());
@@ -326,7 +335,8 @@ namespace Localization
     {
         int featureDim = wordList[0]->GetCenter().cols;
         Mat featureList(wordList.size(), featureDim, CV_32FC1, Scalar(0)); // Exigee by K-Means
-        for (size_t i = 0; i < wordList.size(); ++i)
+#pragma omp parallel for
+        for (int i = 0; i < wordList.size(); ++i)
         {
             wordList[i]->GetCenter().copyTo(featureList.row(i));
         }

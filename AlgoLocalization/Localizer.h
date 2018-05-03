@@ -15,14 +15,12 @@ namespace Localization
     private:
         SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner;
-        vector<Mat> imageCollection;
-        vector<int> labelCollection;
-        
+
         friend class cereal::access;
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mSIFTLearner, mColorLearner, imageCollection, labelCollection);
+            archive(mSIFTLearner, mColorLearner);
         }
     public:
         Localizer() { };
@@ -113,9 +111,9 @@ namespace Localization
         // After each image, returns Room number if successfully recognized
         // Returns -1 if need more image
 
-        int IdentityRoom(Mat img, bool* halt = NULL, int ref = -1)
+        int IdentityRoom(const Mat img, bool* halt = NULL, int ref = -1)
         {
-            static vector<float> secondVotes(NUM_ROOMS, 0);
+            static vector<float> secondVotes(GetNumRoom(), 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
             int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
@@ -158,7 +156,7 @@ namespace Localization
         // Function for testing on databases
         int IdentifyRoom(vector<Mat> images, shared_ptr<float> quality = NULL, bool verbose = false, int ref = -1)
         {
-            vector<float> secondVotes(NUM_ROOMS, 0);
+            vector<float> secondVotes(GetNumRoom(), 0);
             for (size_t i = 0; i < images.size(); ++i)
             {
                 Mat img = images[i];

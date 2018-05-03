@@ -13,8 +13,8 @@ using namespace std;
 #define NUM_MAX_SIFT 150
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
-#define NUM_MAX_WORDS 500
-#define K_SPLIT 10
+#define NUM_MAX_WORDS 100
+#define K_SPLIT 5
 #define MAX_CHILD_NUM 1
 
 // ----------------Really constant ----------------
@@ -25,14 +25,10 @@ using namespace std;
 #define USE_SIFT 1
 #define USE_COLOR 0
 #define USE_SURF 2
-#define NUM_ROOMS 3
-#define SALON 0
-#define CUISINE 1
-#define REUNION 2
-#define MANGER 3
 #define WORD_TYPES 7
 #define NUM_MIN_FEATURES 3000
 #define NUM_MAX_IMAGES 5
+
 
 // ------------ Model ----------------
 #define FULL_SEARCH true
@@ -118,5 +114,27 @@ void initParameters()
     }
 }
 
+
+// Rooms
+extern int NUM_ROOMS = 3;
+void SetNumRoom(int numRoom)
+{
+    NUM_ROOMS = numRoom;
+}
+
+void AddNumRoom()
+{
+    NUM_ROOMS++;
+}
+
+int GetNumRoom()
+{
+    return NUM_ROOMS;
+}
+
+#define SALON 0
+#define CUISINE 1
+#define REUNION 2
+#define MANGER 3
 
 

@@ -93,7 +93,7 @@ public:
         cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
         cout << endl;
 
-        if (NUM_ROOMS == 3)
+        if (GetNumRoom() == 3)
         {
             vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
             vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
@@ -286,39 +286,39 @@ public:
         for (size_t i = 0; i < nExperiments; ++i)
         {
 
-            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal.out";
-            {
-                auto t1 = std::chrono::high_resolution_clock::now();
-                ifstream ifs(filename, ios::binary);
-                cereal::PortableBinaryInputArchive iarchive(ifs);
-                iarchive(mLocalizer);
-                auto t2 = std::chrono::high_resolution_clock::now();
-                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                cout << "Model loaded " << timings << endl;
-            }
-
-            // Training and saving dict
+            //string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal.out";
             //{
-            //    Train(&salonImgs, SALON);
-            //    ReportDict();
-            //    Train(&cuisineImgs, CUISINE);
-            //    ReportDict();
-            //    Train(&reunionImgs, REUNION);
-            //    //Train(&mangerImgs, MANGER);
-            //    cout << " Training done " << endl;
-            //    ReportDict();
-            //    cout << endl << endl;
-
             //    auto t1 = std::chrono::high_resolution_clock::now();
-            //    {
-            //        ofstream ofs(filename, ios::binary);
-            //        cereal::PortableBinaryOutputArchive oarchive(ofs);
-            //        oarchive(mLocalizer);
-            //    }
+            //    ifstream ifs(filename, ios::binary);
+            //    cereal::PortableBinaryInputArchive iarchive(ifs);
+            //    iarchive(mLocalizer);
             //    auto t2 = std::chrono::high_resolution_clock::now();
             //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            //    cout << "Model saved"  << timings << endl;
+            //    cout << "Model loaded " << timings << endl;
             //}
+
+            // Training and saving dict
+            {
+                Train(&salonImgs, SALON);
+                ReportDict();
+                Train(&cuisineImgs, CUISINE);
+                ReportDict();
+                Train(&reunionImgs, REUNION);
+                //Train(&mangerImgs, MANGER);
+                cout << " Training done " << endl;
+                ReportDict();
+                cout << endl << endl;
+
+                auto t1 = std::chrono::high_resolution_clock::now();
+                {
+                    ofstream ofs(filename, ios::binary);
+                    cereal::PortableBinaryOutputArchive oarchive(ofs);
+                    oarchive(mLocalizer);
+                }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                cout << "Model saved"  << timings << endl;
+            }
 
             // Testing results
             {
@@ -342,8 +342,8 @@ int main() {
     //{
     initParameters();
     int nExperiments = N_EXPERIMENTS;
-    vector<float> stats(NUM_ROOMS * 2 + 1, 0); // accuracy and unidentified
-    vector<float> correctStats(NUM_ROOMS * 2, 0); // accuracy and unidentified
+    vector<float> stats(GetNumRoom() * 2 + 1, 0); // accuracy and unidentified
+    vector<float> correctStats(GetNumRoom() * 2, 0); // accuracy and unidentified
     for (size_t i = 0; i < nExperiments; ++i)
     {
         cout << "---------------- Run " << i + 1 << " -----------------" << endl;
