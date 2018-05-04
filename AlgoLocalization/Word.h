@@ -97,7 +97,11 @@ namespace Localization
             {
                 mPresenceRooms[indexRoom] = true;
             }
-            // else error
+            else
+            {
+                mPresenceRooms.push_back(true);
+                assert(mPresenceRooms.size() - 1 == indexRoom);
+            }
         }
 
         bool ContainFeature(T feature)

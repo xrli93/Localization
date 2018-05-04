@@ -95,21 +95,21 @@ public:
 
         if (GetNumRoom() == 3)
         {
-            vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
-            vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
-            cout << "SIFT Dict analysis: " << endl;
-            for (auto i : SIFTAnalysis)
-            {
-                cout << setw(4) << i << ", ";
-            }
-            cout << endl << endl;
+            //vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
+            //vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
+            //cout << "SIFT Dict analysis: " << endl;
+            //for (auto i : SIFTAnalysis)
+            //{
+            //    cout << setw(4) << i << ", ";
+            //}
+            //cout << endl << endl;
 
-            cout << "Color Dict analysis: " << endl;
-            for (auto i : ColorAnalysis)
-            {
-                cout << setw(4) << i << ", ";
-            }
-            cout << endl << endl;
+            //cout << "Color Dict analysis: " << endl;
+            //for (auto i : ColorAnalysis)
+            //{
+            //    cout << setw(4) << i << ", ";
+            //}
+            //cout << endl << endl;
         }
     }
 
@@ -281,20 +281,24 @@ public:
         Mat img;
 
         ReadImages();
+        mLocalizer.AddRoom();
 
         cout << "Read all imgs" << endl;
         for (size_t i = 0; i < nExperiments; ++i)
         {
 
-            //string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal.out";
+            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal4.out";
+
+
+
             //{
-            //    auto t1 = std::chrono::high_resolution_clock::now();
-            //    ifstream ifs(filename, ios::binary);
-            //    cereal::PortableBinaryInputArchive iarchive(ifs);
-            //    iarchive(mLocalizer);
-            //    auto t2 = std::chrono::high_resolution_clock::now();
-            //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            //    cout << "Model loaded " << timings << endl;
+                //auto t1 = std::chrono::high_resolution_clock::now();
+                //ifstream ifs(filename, ios::binary);
+                //cereal::PortableBinaryInputArchive iarchive(ifs);
+                //iarchive(mLocalizer);
+                //auto t2 = std::chrono::high_resolution_clock::now();
+                //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                //cout << "Model loaded " << timings << endl;
             //}
 
             // Training and saving dict
@@ -304,9 +308,10 @@ public:
                 Train(&cuisineImgs, CUISINE);
                 ReportDict();
                 Train(&reunionImgs, REUNION);
-                //Train(&mangerImgs, MANGER);
-                cout << " Training done " << endl;
                 ReportDict();
+                //Train(&mangerImgs, MANGER);
+                ReportDict();
+                cout << " Training done " << endl;
                 cout << endl << endl;
 
                 auto t1 = std::chrono::high_resolution_clock::now();
@@ -325,6 +330,7 @@ public:
                 ReportIncremental(salonTest, SALON, results);
                 ReportIncremental(cuisineTest, CUISINE, results);
                 ReportIncremental(reunionTest, REUNION, results);
+                //ReportIncremental(reunionTest, MANGER, results);
             }
             //ReportResults(mangerTest, MANGER, results);
             ReportDict();

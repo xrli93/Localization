@@ -10,10 +10,10 @@ using namespace std;
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
 
-#define NUM_MAX_SIFT 150
+#define NUM_MAX_SIFT 250
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
-#define NUM_MAX_WORDS 100
+#define NUM_MAX_WORDS 150
 #define K_SPLIT 5
 #define MAX_CHILD_NUM 1
 
@@ -45,11 +45,11 @@ const int mNorm = NORM_KL;
 #define DISP_DEBUG false
 #define DISP_IMAGE false
 #define DISP_INCREMENTAL false
-#define VERBOSE false
+#define VERBOSE true
 
 // ------------ Hyperparameters ------------
-#define TEST_SIZE 50
-#define TRAIN_SIZE 50
+#define TEST_SIZE 30
+#define TRAIN_SIZE 20
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1
@@ -98,7 +98,7 @@ void initParameters()
         cuisineTestPath = CUISINE_TEST_V2;
         reunionTestPath = REUNION_TEST_V2;
         mangerTrainPath = MANGER_TRAIN_V2;
-        mangerTestPath = MANGER_TEST_V2;
+        mangerTestPath = MANGER_TRAIN_V2;
     }
 
     if (dataSet == DATA_V2_VAR)
@@ -110,13 +110,13 @@ void initParameters()
         cuisineTestPath = CUISINE_TEST_V2_VAR;
         reunionTestPath = REUNION_TEST_V2_VAR;
         mangerTrainPath = MANGER_TRAIN_V2;
-        mangerTestPath = MANGER_TEST_V2_VAR;
+        mangerTestPath = MANGER_TRAIN_V2;
     }
 }
 
 
 // Rooms
-extern int NUM_ROOMS = 3;
+extern int NUM_ROOMS = 2;
 void SetNumRoom(int numRoom)
 {
     NUM_ROOMS = numRoom;

@@ -26,10 +26,10 @@ namespace Localization
         Localizer() { };
 
         ~Localizer() { };
-        vector<int> AnalyseDict(int featureMethod)
-        {
-            return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
-        }
+        //vector<int> AnalyseDict(int featureMethod)
+        //{
+        //    return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
+        //}
 
         vector<int> CountWords()
         {
@@ -51,15 +51,14 @@ namespace Localization
             mSIFTLearner.RemoveCommonWords();
             mColorLearner.RemoveCommonWords();
         }
-
-
-        void AddImage(Mat img, int label)
+        void AddRoom()
         {
-            Mat lImg = Mat(240, 320, CV_8UC1);
-            resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
-            imageCollection.push_back(lImg);
-            labelCollection.push_back(label);
+            AddNumRoom();
+            mSIFTLearner.AddRoom();
+            mColorLearner.AddRoom();
         }
+
+
 
         // Actually without internal storage of img and lable
         // TODO: Optimize structure
@@ -82,16 +81,6 @@ namespace Localization
             }
         }
 
-        void LearnCollection()
-        {
-            for (size_t i = 0; i < imageCollection.size(); ++i)
-            {
-                Mat img = imageCollection[i];
-                int label = labelCollection[i];
-                mSIFTLearner.LearnImage(img, label);
-                mColorLearner.LearnImage(img, label);
-            }
-        }
 
         // To determine if necessary to continue learning
         bool LearntEnoughFeatures()
@@ -116,8 +105,8 @@ namespace Localization
             static vector<float> secondVotes(GetNumRoom(), 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
-            int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
-            int ColorVote = mColorLearner.IdentifyImage(img, quality, ref);
+            int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
+            int ColorVote = mColorLearner.IdentifyImage(img, quality);
             double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
             if (SIFTVote > -1)
             {
@@ -160,8 +149,8 @@ namespace Localization
             for (size_t i = 0; i < images.size(); ++i)
             {
                 Mat img = images[i];
-                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality, ref);
-                int ColorVote = mColorLearner.IdentifyImage(img, quality, ref);
+                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
+                int ColorVote = mColorLearner.IdentifyImage(img, quality);
 
                 if (SIFTVote > -1)
                 {
