@@ -14,6 +14,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include "cereal\archives\portable_binary.hpp"
+#include "cereal\archives\xml.hpp"
 #include "matcerealisation.hpp"
 using namespace std;
 using namespace Localization;
@@ -281,28 +282,38 @@ public:
         Mat img;
 
         ReadImages();
-        mLocalizer.AddRoom();
 
         cout << "Read all imgs" << endl;
         for (size_t i = 0; i < nExperiments; ++i)
         {
 
-            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cereal4.out";
-
+            string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\dict.bin";
+            string configPath = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\config.bin";
 
 
             //{
-                //auto t1 = std::chrono::high_resolution_clock::now();
-                //ifstream ifs(filename, ios::binary);
-                //cereal::PortableBinaryInputArchive iarchive(ifs);
-                //iarchive(mLocalizer);
-                //auto t2 = std::chrono::high_resolution_clock::now();
-                //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                //cout << "Model loaded " << timings << endl;
+            //    auto t1 = std::chrono::high_resolution_clock::now();
+            //    {
+            //        ifstream ifs(filename, ios::binary);
+            //        cereal::PortableBinaryInputArchive iarchive(ifs);
+            //        iarchive(mLocalizer);
+            //    }
+            //    {
+            //        ifstream ifs(configPath, ios::binary);
+            //        cereal::PortableBinaryInputArchive iarchive(ifs);
+            //        iarchive(mConfig);
+            //    }
+            //    auto t2 = std::chrono::high_resolution_clock::now();
+            //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            //    cout << "Model loaded " << timings << endl;
+            //    mLocalizer.AddRoom();
+            //    //Train(&reunionImgs, REUNION);
+            //    Train(&mangerImgs, MANGER);
             //}
 
             // Training and saving dict
             {
+                mLocalizer.AddRoom();
                 Train(&salonImgs, SALON);
                 ReportDict();
                 Train(&cuisineImgs, CUISINE);
@@ -310,7 +321,7 @@ public:
                 Train(&reunionImgs, REUNION);
                 ReportDict();
                 //Train(&mangerImgs, MANGER);
-                ReportDict();
+                //ReportDict();
                 cout << " Training done " << endl;
                 cout << endl << endl;
 
@@ -320,9 +331,14 @@ public:
                     cereal::PortableBinaryOutputArchive oarchive(ofs);
                     oarchive(mLocalizer);
                 }
+                {
+                    ofstream ofs(configPath, ios::binary);
+                    cereal::PortableBinaryOutputArchive oArchive(ofs);
+                    oArchive(mConfig);
+                }
                 auto t2 = std::chrono::high_resolution_clock::now();
                 double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                cout << "Model saved"  << timings << endl;
+                cout << "Model saved" << timings << endl;
             }
 
             // Testing results
@@ -330,7 +346,7 @@ public:
                 ReportIncremental(salonTest, SALON, results);
                 ReportIncremental(cuisineTest, CUISINE, results);
                 ReportIncremental(reunionTest, REUNION, results);
-                //ReportIncremental(reunionTest, MANGER, results);
+                //ReportIncremental(mangerTest, MANGER, results);
             }
             //ReportResults(mangerTest, MANGER, results);
             ReportDict();

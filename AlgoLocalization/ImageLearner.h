@@ -77,13 +77,13 @@ namespace Localization
         virtual Mat CalculateFeatures(const Mat& img) = 0;
 
         // Learn one image and return the number of features learrnt
-        int LearnImage(Mat img, int label)
+        int LearnImage(const Mat& img, int label)
         {
             Mat features = CalculateFeatures(img);
             // Set origin node to zero
             Mat origin = Mat(1, features.cols, CV_8UC1, Scalar(0.));
             mDict.SetRootNodeCenter(origin);
-            for (size_t i = 0; i < features.rows; ++i)
+            for (int i = 0; i < features.rows; ++i)
             {
                 mDict.AddFeature(features.row(i), label);
                 //std::cout << "feature No." << i << endl;
@@ -95,7 +95,7 @@ namespace Localization
         }
 
         // First level voting
-        int IdentifyImage(Mat img, shared_ptr<float> quality = NULL) // DEBUG: ref permit to check the output
+        int IdentifyImage(const Mat& img, shared_ptr<float> quality = NULL) // DEBUG: ref permit to check the output
         {
             shared_ptr<Mat> features = make_shared<Mat>(CalculateFeatures(img));
             vector<float> votes(GetNumRoom(), 0);

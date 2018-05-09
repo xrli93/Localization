@@ -10,10 +10,10 @@ using namespace std;
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
 
-#define NUM_MAX_SIFT 250
+#define NUM_MAX_SIFT 180
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
-#define NUM_MAX_WORDS 150
+#define NUM_MAX_WORDS 250
 #define K_SPLIT 5
 #define MAX_CHILD_NUM 1
 
@@ -49,7 +49,7 @@ const int mNorm = NORM_KL;
 
 // ------------ Hyperparameters ------------
 #define TEST_SIZE 30
-#define TRAIN_SIZE 20
+#define TRAIN_SIZE 50
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1
@@ -106,30 +106,41 @@ void initParameters()
         salonTrainPath = SALON_TRAIN_V2;
         cuisineTrainPath = CUISINE_TRAIN_V2;
         reunionTrainPath = REUNION_TRAIN_V2;
+        mangerTrainPath = MANGER_TRAIN_V2;
         salonTestPath = SALON_TEST_V2_VAR;
         cuisineTestPath = CUISINE_TEST_V2_VAR;
         reunionTestPath = REUNION_TEST_V2_VAR;
-        mangerTrainPath = MANGER_TRAIN_V2;
-        mangerTestPath = MANGER_TRAIN_V2;
+        mangerTestPath = MANGER_TEST_V2_VAR;
     }
 }
 
 
 // Rooms
-extern int NUM_ROOMS = 2;
+struct Config
+{
+    int NUM_ROOMS = 2;
+
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(NUM_ROOMS);
+    }
+};
+
+Config mConfig;
 void SetNumRoom(int numRoom)
 {
-    NUM_ROOMS = numRoom;
+    mConfig.NUM_ROOMS = numRoom;
 }
 
 void AddNumRoom()
 {
-    NUM_ROOMS++;
+    mConfig.NUM_ROOMS++;
 }
 
 int GetNumRoom()
 {
-    return NUM_ROOMS;
+    return mConfig.NUM_ROOMS;
 }
 
 #define SALON 0

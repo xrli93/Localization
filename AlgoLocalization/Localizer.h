@@ -62,7 +62,7 @@ namespace Localization
 
         // Actually without internal storage of img and lable
         // TODO: Optimize structure
-        void LearnImage(Mat img, int label)
+        void LearnImage(const Mat& img, int label)
         {
             //Mat lImg = Mat(240, 320 CV_8UC1);
             //resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
@@ -100,7 +100,7 @@ namespace Localization
         // After each image, returns Room number if successfully recognized
         // Returns -1 if need more image
 
-        int IdentityRoom(const Mat img, bool* halt = NULL, int ref = -1)
+        int IdentityRoom(const Mat& img, bool* halt = NULL, int ref = -1)
         {
             static vector<float> secondVotes(GetNumRoom(), 0);
             static int trys = 0;
@@ -120,7 +120,7 @@ namespace Localization
             {
                 if (VERBOSE)
                 {
-                    cout << "Color voting" << SIFTVote << endl;
+                    cout << "Color voting" << ColorVote << endl;
                 }
                 secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
             }

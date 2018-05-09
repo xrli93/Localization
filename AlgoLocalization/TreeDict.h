@@ -319,7 +319,7 @@ namespace Localization
     }
 
     template <class T>
-    Mat MakeFeatureListFromWords(vector<shared_ptr<Word<T> > > wordList)
+    Mat MakeFeatureListFromWords(vector<shared_ptr<Word<T> > >& wordList)
     {
         vector<T> featureList;
 #pragma omp parallel for
@@ -331,7 +331,7 @@ namespace Localization
         Mat featureMat(featureList.size(), 1, CV_32FC1);  // ** Make 1 column Mat from vector
         return featureMat;
     }
-    template<> Mat MakeFeatureListFromWords(vector<shared_ptr<Word<Mat> > > wordList)
+    template<> Mat MakeFeatureListFromWords(vector<shared_ptr<Word<Mat> > >& wordList)
     {
         int featureDim = wordList[0]->GetCenter().cols;
         Mat featureList(wordList.size(), featureDim, CV_32FC1, Scalar(0)); // Exigee by K-Means
