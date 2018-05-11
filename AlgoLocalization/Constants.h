@@ -1,5 +1,7 @@
 #pragma once
-
+#include <list>
+#include "cereal\types\list.hpp"
+#include <algorithm>
 using namespace std;
 // ---------------- Dictionary parameters ----------------
 #define RADIUS 50.0
@@ -118,30 +120,54 @@ void initParameters()
 // Rooms
 struct Config
 {
-    int NUM_ROOMS = 2;
+    vector<string> mRooms;
 
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(NUM_ROOMS);
+        ar(mRooms);
+    }
+
+    void AddRoomName(const string& name)
+    {
+        if (find(mRooms.begin(), mRooms.end(), name) == mRooms.end())
+        {
+            mRooms.push_back(name);
+        }
+    }
+
+    void RemoveRoom(const string& name)
+    {
+        mRooms.erase(std::find(mRooms.begin(), mRooms.end(), name));
+    }
+
+    int GetRoomCount()
+    {
+        return mRooms.size();
+    }
+
+    int GetRoomIndex(string room)
+    {
+        return distance(mRooms.begin(),
+            find(mRooms.begin(), mRooms.end(), room));
+    }
+    
+    const string& GetRoomName(int index) 
+    { 
+        if (index >= 0 && index < mRooms.size())
+        {
+            return mRooms[index];
+        }
+        else
+        {
+            return "";
+        }
     }
 };
 
 Config mConfig;
-void SetNumRoom(int numRoom)
-{
-    mConfig.NUM_ROOMS = numRoom;
-}
 
-void AddNumRoom()
-{
-    mConfig.NUM_ROOMS++;
-}
 
-int GetNumRoom()
-{
-    return mConfig.NUM_ROOMS;
-}
 
 #define SALON 0
 #define CUISINE 1

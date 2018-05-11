@@ -42,7 +42,7 @@ namespace Localization
     template <class T>
     class ImageLearner
     {
-    public:
+    protected:
         TreeDict<T> mDict{};
         int mFeatureCount = 0;
         vector<int> mRoomFeaturesCount;
@@ -57,7 +57,7 @@ namespace Localization
     public:
         ImageLearner()
         {
-            mRoomFeaturesCount = vector<int>(GetNumRoom(), 0);
+            mRoomFeaturesCount = vector<int>(mConfig.GetRoomCount(), 0);
         }
 
         ~ImageLearner() {};
@@ -69,6 +69,11 @@ namespace Localization
         void AddRoom()
         {
             mRoomFeaturesCount.push_back(0);
+        }
+        void RemoveRoom(const string& room)
+        {
+            mRoomFeaturesCount.erase(mRoomFeaturesCount.begin() + mConfig.GetRoomIndex(room));
+            mDict.RemoveRoom(room);
         }
 
 
@@ -98,7 +103,7 @@ namespace Localization
         int IdentifyImage(const Mat& img, shared_ptr<float> quality = NULL) // DEBUG: ref permit to check the output
         {
             shared_ptr<Mat> features = make_shared<Mat>(CalculateFeatures(img));
-            vector<float> votes(GetNumRoom(), 0);
+            vector<float> votes(mConfig.GetRoomCount(), 0);
             for (size_t i = 0; i < features->rows; ++i)
             {
                 vector<shared_ptr<Word<Mat> > > wordList = mDict.Search(features->row(i), FULL_SEARCH);

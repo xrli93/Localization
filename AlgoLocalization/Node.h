@@ -59,7 +59,8 @@ namespace Localization
         {
             return mWords;
         }
-
+        
+        // TODO: One better implementation is to return iterators
         vector<shared_ptr<Node<T> > > GetChildNodes() const
         {
             return mChildNodes;
@@ -87,6 +88,14 @@ namespace Localization
             mWords.erase(remove_if(mWords.begin(), mWords.end(),
                 [](shared_ptr<Word<T> > pWord) {return pWord->PresentInAll(); }),
                 mWords.end());
+        }
+
+        void RemoveRoom(const string& room)
+        {
+            for (size_t i = 0; i < mWords.size(); i++)
+            {
+                mWords[i]->RemoveRoomPresence(room);
+            }
         }
 
 
@@ -128,7 +137,7 @@ namespace Localization
         // TODO: make general
         vector<int> AnalyseWords()
         {
-            assert(GetNumRoom() == 3);
+            assert(GetRoomCount() == 3);
             vector<int> count(WORD_TYPES, 0);
             vector<int> total(WORD_TYPES, 0);
             for (size_t i = 0; i < mWords.size(); ++i)

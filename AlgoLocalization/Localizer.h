@@ -51,19 +51,26 @@ namespace Localization
             mSIFTLearner.RemoveCommonWords();
             mColorLearner.RemoveCommonWords();
         }
-        void AddRoom()
+        void AddRoom(const string& room)
         {
-            AddNumRoom();
+            mConfig.AddRoomName(room);
             mSIFTLearner.AddRoom();
             mColorLearner.AddRoom();
+        }
+        void RemoveRoom(const string& room)
+        {
+            mSIFTLearner.RemoveRoom(room);
+            mColorLearner.RemoveRoom(room);
+            mConfig.RemoveRoom(room);
         }
 
 
 
         // Actually without internal storage of img and lable
         // TODO: Optimize structure
-        void LearnImage(const Mat& img, int label)
+        void LearnImage(const Mat& img, string room)
         {
+            int label = mConfig.GetRoomIndex(room);
             //Mat lImg = Mat(240, 320 CV_8UC1);
             //resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
             if (img.cols == 320)
@@ -98,11 +105,11 @@ namespace Localization
 
         // Incremental learning. 
         // After each image, returns Room number if successfully recognized
-        // Returns -1 if need more image
+        // Returns empty string if need more image, or unidentified
 
-        int IdentityRoom(const Mat& img, bool* halt = NULL, int ref = -1)
+        string IdentifyRoom(const Mat& img, bool* halt = NULL, int ref = -1)
         {
-            static vector<float> secondVotes(GetNumRoom(), 0);
+            static vector<float> secondVotes(mConfig.GetRoomCount(), 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
             int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
@@ -130,22 +137,22 @@ namespace Localization
                 sumSecondVotes += secondVotes[i];
             }
             //int result = Localization::CountVotes(secondVotes, &quality, THRESHOLD_SECOND_VOTE, sumFactor * (trys+1));
-            int result = Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
+            int roomIndex = Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
             if ((*quality >= THRESHOLD_SECOND_VOTE && sumSecondVotes > 1) || ++trys >= NUM_MAX_IMAGES)
             {
                 fill(secondVotes.begin(), secondVotes.end(), 0);
                 trys = 0;
                 *halt = true;
-                return result;
+                return mConfig.GetRoomName(roomIndex);
             }
-            return -1;
+            return "";
         }
 
         // Second level voting for images on two feature spaces
         // Function for testing on databases
         int IdentifyRoom(vector<Mat> images, shared_ptr<float> quality = NULL, bool verbose = false, int ref = -1)
         {
-            vector<float> secondVotes(GetNumRoom(), 0);
+            vector<float> secondVotes(mConfig.GetRoomCount(), 0);
             for (size_t i = 0; i < images.size(); ++i)
             {
                 Mat img = images[i];

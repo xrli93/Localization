@@ -69,6 +69,25 @@ namespace Localization
             return (mFeatureMethod == USE_SIFT) ? "SIFT" : "Color";
         }
 
+        void RemoveRoom(const string& room) { RemoveRoom(mRootNode, room); }
+
+        void RemoveRoom(shared_ptr<Node<T>> node, const string& room)
+        {
+            if (!node->IsLeafNode())
+            {
+                vector<shared_ptr<Node<T> > > childList = node->GetChildNodes();
+                for (size_t i = 0; i < childList.size(); ++i)
+                {
+                    shared_ptr<Node<T> > lNode = childList[i];
+                    RemoveRoom(lNode, room);
+                }
+            }
+            else
+            {
+                node->RemoveRoom(room);
+            }
+        }
+
         // Count words in dict
         int CountWords() { return CountWords(mRootNode); }
 
@@ -262,7 +281,7 @@ namespace Localization
             {
                 vector<shared_ptr<Node<T> > > lChildNodes = minNode->GetChildNodes();
                 float minDist = numeric_limits<float>::max();
-//#pragma omp parallel for
+                //#pragma omp parallel for
                 for (int i = 0; i < lChildNodes.size(); ++i)
                 {
                     shared_ptr<Node<T> > lNode = lChildNodes[i];

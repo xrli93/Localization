@@ -44,7 +44,7 @@ namespace Localization
     private:
         void initMPresenceRooms()
         {
-            for (int i = 0; i < GetNumRoom(); ++i)
+            for (int i = 0; i < mConfig.GetRoomCount(); ++i)
             {
                 mPresenceRooms.push_back(false);
             }
@@ -93,7 +93,7 @@ namespace Localization
 
         void UpdateLabel(int indexRoom)
         {
-            if (indexRoom < GetNumRoom())
+            if (indexRoom < mConfig.GetRoomCount())
             {
                 mPresenceRooms[indexRoom] = true;
             }
@@ -117,19 +117,24 @@ namespace Localization
 
         void Display()
         {
-            for (int i = 0; i < GetNumRoom(); ++i)
+            for (int i = 0; i < mConfig.GetRoomCount(); ++i)
             {
                 cout << mPresenceRooms[i];
             }
             cout << endl;
         }
 
+        void RemoveRoomPresence(const string& room)
+        {
+            mPresenceRooms.erase(mPresenceRooms.begin() + mConfig.GetRoomIndex(room));
+        }
+
         // Vote using inverse document frequency 
         vector<float> Vote()
         {
-            vector<float> scores(GetNumRoom(), 0);
+            vector<float> scores(mConfig.GetRoomCount(), 0);
             int roomsSeen = 0;
-            for (size_t i = 0; i < GetNumRoom(); ++i)
+            for (size_t i = 0; i < mConfig.GetRoomCount(); ++i)
             {
                 roomsSeen += mPresenceRooms[i] ? 1 : 0;
             }
@@ -146,7 +151,7 @@ namespace Localization
             {
                 for (size_t i = 0; i < scores.size(); ++i)
                 {
-                    scores[i] = mPresenceRooms[i] ? log(GetNumRoom() * 1.0 / roomsSeen) / log(GetNumRoom()) : 0;
+                    scores[i] = mPresenceRooms[i] ? log(mConfig.GetRoomCount() * 1.0 / roomsSeen) / log(mConfig.GetRoomCount()) : 0;
                 }
             }
             return scores;
