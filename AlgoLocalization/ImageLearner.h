@@ -82,6 +82,7 @@ namespace Localization
         virtual Mat CalculateFeatures(const Mat& img) = 0;
 
         // Learn one image and return the number of features learrnt
+        // TODO: perhaps split and expose features so that it can be also used by TopoMap
         int LearnImage(const Mat& img, int label)
         {
             Mat features = CalculateFeatures(img);

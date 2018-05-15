@@ -201,10 +201,13 @@
     <ClInclude Include="cereal\types\vector.hpp" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="ImageLearner.h" />
+    <ClInclude Include="Landmark.h" />
     <ClInclude Include="Localizer.h" />
     <ClInclude Include="matcerealisation.hpp" />
     <ClInclude Include="Node.h" />
+    <ClInclude Include="Path.h" />
     <ClInclude Include="serial.h" />
+    <ClInclude Include="TopoMap.h" />
     <ClInclude Include="TreeDict.h" />
     <ClInclude Include="Word.h" />
   </ItemGroup>

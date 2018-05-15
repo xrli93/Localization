@@ -16,6 +16,7 @@
 #include "cereal\archives\portable_binary.hpp"
 #include "cereal\archives\xml.hpp"
 #include "matcerealisation.hpp"
+#include "TopoMap.h"
 using namespace std;
 using namespace Localization;
 using namespace cv;
@@ -66,6 +67,7 @@ public:
     int nImgs = 1;
     int nExperiments = 1;
     Localizer mLocalizer{};
+    TopoMap<int> mMap{};
     Tester() {}
 
     Tester(int numLearning, int numTest, int numImgs) :
@@ -281,6 +283,15 @@ public:
 
         ReadImages();
 
+        string salon = "Salon";
+        string cuisine = "Cuisine";
+        string reunion = "Reunion";
+        //mMap.AddRoom(salon);
+        //mMap.AddRoom(cuisine);
+
+        //mMap.AddRoomConnection(salon, cuisine);
+        //mMap.AddRoomConnection(salon, reunion);
+
         cout << "Read all imgs" << endl;
         for (size_t i = 0; i < nExperiments; ++i)
         {
@@ -290,55 +301,55 @@ public:
 
 
             //{
-                auto t1 = std::chrono::high_resolution_clock::now();
-                {
-                    ifstream ifs(filename, ios::binary);
-                    cereal::PortableBinaryInputArchive iarchive(ifs);
-                    iarchive(mLocalizer);
-                }
-                {
-                    ifstream ifs(configPath, ios::binary);
-                    cereal::PortableBinaryInputArchive iarchive(ifs);
-                    iarchive(mConfig);
-                }
-                auto t2 = std::chrono::high_resolution_clock::now();
-                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                cout << "Model loaded " << timings << endl;
+            //auto t1 = std::chrono::high_resolution_clock::now();
+            //{
+            //    ifstream ifs(filename, ios::binary);
+            //    cereal::PortableBinaryInputArchive iarchive(ifs);
+            //    iarchive(mLocalizer);
+            //}
+            //{
+            //    ifstream ifs(configPath, ios::binary);
+            //    cereal::PortableBinaryInputArchive iarchive(ifs);
+            //    iarchive(mConfig);
+            //}
+            //auto t2 = std::chrono::high_resolution_clock::now();
+            //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            //cout << "Model loaded " << timings << endl;
             //}
 
             // Training and saving dict
             {
-                //string salon = "Salon";
-                //string cuisine = "Cuisine";
-                //string reunion = "Reunion";
-                //mLocalizer.AddRoom(salon);
-                //mLocalizer.AddRoom(cuisine);
-                //mLocalizer.AddRoom(reunion);
-                //Train(&salonImgs, salon);
+                string salon = "Salon";
+                string cuisine = "Cuisine";
+                string reunion = "Reunion";
+                mLocalizer.AddRoom(salon);
+                mLocalizer.AddRoom(cuisine);
+                mLocalizer.AddRoom(reunion);
+                Train(&salonImgs, salon);
+                ReportDict();
+                Train(&cuisineImgs, cuisine);
+                ReportDict();
+                Train(&reunionImgs, reunion);
+                ReportDict();
+                //Train(&mangerImgs, MANGER);
                 //ReportDict();
-                //Train(&cuisineImgs, cuisine);
-                //ReportDict();
-                //Train(&reunionImgs, reunion);
-                //ReportDict();
-                ////Train(&mangerImgs, MANGER);
-                ////ReportDict();
-                //cout << " Training done " << endl;
-                //cout << endl << endl;
+                cout << " Training done " << endl;
+                cout << endl << endl;
 
-                //auto t1 = std::chrono::high_resolution_clock::now();
-                //{
-                //    ofstream ofs(filename, ios::binary);
-                //    cereal::PortableBinaryOutputArchive oarchive(ofs);
-                //    oarchive(mLocalizer);
-                //}
-                //{
-                //    ofstream ofs(configPath, ios::binary);
-                //    cereal::PortableBinaryOutputArchive oArchive(ofs);
-                //    oArchive(mConfig);
-                //}
-                //auto t2 = std::chrono::high_resolution_clock::now();
-                //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                //cout << "Model saved" << timings << endl;
+                auto t1 = std::chrono::high_resolution_clock::now();
+                {
+                    ofstream ofs(filename, ios::binary);
+                    cereal::PortableBinaryOutputArchive oarchive(ofs);
+                    oarchive(mLocalizer);
+                }
+                {
+                    ofstream ofs(configPath, ios::binary);
+                    cereal::PortableBinaryOutputArchive oArchive(ofs);
+                    oArchive(mConfig);
+                }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                cout << "Model saved" << timings << endl;
             }
 
             // Testing results
@@ -353,6 +364,9 @@ public:
                 //ReportIncremental(mangerTest, MANGER, results);
             }
             //ReportResults(mangerTest, MANGER, results);
+            cout << mLocalizer.IsConnected(cuisine, salon);
+            cout << mLocalizer.IsConnected(cuisine, reunion);
+            cout << mLocalizer.IsConnected(salon, reunion);
             ReportDict();
             cout << endl << endl;
 

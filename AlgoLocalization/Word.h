@@ -31,15 +31,6 @@ namespace Localization
             archive(mCenter, mRadius, mPresenceRooms);
         }
 
-        // Serialization
-        //friend class boost::serialization::access;
-        //template<typename Archive>
-        //void serialize(Archive& ar, const unsigned version)
-        //{
-        //    ar & mCenter & mRadius & mPresenceRooms;
-        //}
-
-        // cereal
 
     private:
         void initMPresenceRooms()
@@ -48,6 +39,10 @@ namespace Localization
             {
                 mPresenceRooms.push_back(false);
             }
+            //for (auto const& room : mConfig.mRooms)
+            //{
+            //    mPresenceRooms.insert(make_pair(room, false))
+            //}
         }
     public:
         Word()
@@ -138,15 +133,7 @@ namespace Localization
             {
                 roomsSeen += mPresenceRooms[i] ? 1 : 0;
             }
-            // DEBUG: Only unique words vote
-            //if (roomsSeen == 1)
-            //{
-            //    for (size_t i = 0; i < scores.size(); ++i)
-            //    {
-            //        scores[i] = mPresenceRooms[i] ? 1 : 0;
-            //    }
 
-            //}
             if (roomsSeen > 0)
             {
                 for (size_t i = 0; i < scores.size(); ++i)

@@ -1,9 +1,10 @@
 #pragma once
 
-#include"TreeDict.h"
+#include "TreeDict.h"
 #include "opencv2/xfeatures2d.hpp"
 #include "Constants.h"
-#include"ImageLearner.h"
+#include "ImageLearner.h"
+#include "TopoMap.h"
 using namespace cv;
 using namespace Localization;
 
@@ -15,6 +16,8 @@ namespace Localization
     private:
         SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner;
+        TopoMap mMap;
+        string mLastRoomLearned;
 
         friend class cereal::access;
         template<class Archive>
@@ -56,6 +59,7 @@ namespace Localization
             mConfig.AddRoomName(room);
             mSIFTLearner.AddRoom();
             mColorLearner.AddRoom();
+
         }
         void RemoveRoom(const string& room)
         {
@@ -64,7 +68,10 @@ namespace Localization
             mConfig.RemoveRoom(room);
         }
 
+        void LearnImageOnLandmark(const Mat& img, string room, int landmark, float angle)
+        {
 
+        }
 
         // Actually without internal storage of img and lable
         // TODO: Optimize structure
@@ -83,9 +90,24 @@ namespace Localization
                 cout << "Formatting image" << endl;
                 Mat lImg = Mat(240, 320, CV_8UC1);
                 resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
-                mSIFTLearner.LearnImage(img, label);
-                mColorLearner.LearnImage(img, label);
+                mSIFTLearner.LearnImage(lImg, label);
+                mColorLearner.LearnImage(lImg, label);
             }
+
+            // Add room connection
+            if (!mLastRoomLearned.empty())
+            {
+                if (mLastRoomLearned.compare(room) != 0) // different room
+                {
+                    mMap.AddRoomConnection(mLastRoomLearned, room);
+                }
+            }
+            mLastRoomLearned = room;
+        }
+
+        bool IsConnected(const string& room1, const string& room2)
+        {
+            return mMap.IsConnected(room1, room2);
         }
 
 

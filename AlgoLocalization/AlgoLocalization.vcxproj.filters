@@ -276,6 +276,15 @@
     <ClInclude Include="matcerealisation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TopoMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Path.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Landmark.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
