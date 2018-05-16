@@ -68,30 +68,25 @@ namespace Localization
             mConfig.RemoveRoom(room);
         }
 
-        void LearnImageOnLandmark(const Mat& img, string room, int landmark, float angle)
-        {
-
-        }
-
-        // Actually without internal storage of img and lable
         // TODO: Optimize structure
-        void LearnImage(const Mat& img, string room)
+        void LearnImage(const Mat& img, string room, int iLandmark = -1, float iOrientation = 0)
         {
             int label = mConfig.GetRoomIndex(room);
             //Mat lImg = Mat(240, 320 CV_8UC1);
             //resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
             if (img.cols == 320)
             {
-                mSIFTLearner.LearnImage(img, label);
-                mColorLearner.LearnImage(img, label);
+                // TODO: use color or not?
+                mSIFTLearner.LearnImage(img, label, iLandmark, iOrientation);
+                mColorLearner.LearnImage(img, label, iLandmark, iOrientation);
             }
             else
             {
                 cout << "Formatting image" << endl;
                 Mat lImg = Mat(240, 320, CV_8UC1);
                 resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
-                mSIFTLearner.LearnImage(lImg, label);
-                mColorLearner.LearnImage(lImg, label);
+                mSIFTLearner.LearnImage(lImg, label, iLandmark, iOrientation);
+                mColorLearner.LearnImage(lImg, label, iLandmark, iOrientation);
             }
 
             // Add room connection
@@ -128,7 +123,6 @@ namespace Localization
         // Incremental learning. 
         // After each image, returns Room number if successfully recognized
         // Returns empty string if need more image, or unidentified
-
         string IdentifyRoom(const Mat& img, bool* halt = NULL, int ref = -1)
         {
             static vector<float> secondVotes(mConfig.GetRoomCount(), 0);
@@ -220,6 +214,13 @@ namespace Localization
             return Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
         }
 
+        float GetOrientationToLandmark(const Mat& img, int iLandmark)
+        {
+            // For the moment SIFT only, can easy add Color
+            float angle = mSIFTLearner.GetOrientationToLandmark(img, iLandmark);
+            //angle += mColorLearner.GetOrientationToLandmark(img, iLandmark);
+            return angle;
+        }
     };
 }
 

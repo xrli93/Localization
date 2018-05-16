@@ -185,7 +185,7 @@ namespace Localization
         }
 
         // Add a feature to the dict
-        void AddFeature(T feature, int indexRoom)
+        vector<shared_ptr<Word<T>>> AddFeature(T feature, int indexRoom)
         {
             //bool enableFullSearch = (mFeatureMethod == USE_SIFT) ? false : true;
             //cout << feature;
@@ -202,11 +202,15 @@ namespace Localization
             {
                 shared_ptr<Word<T> > newWord = make_shared<Word<T> >(feature, indexRoom, mRadius);
                 shared_ptr<Node<T> > node = AddWordToDict(newWord);
+                wordList.push_back(newWord);
                 if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
                 {
                     Expand(node);
                 }
             }
+            // Subtle point: if return constant reference, it will not increment the counter
+            // So wordList will be empty!
+            return wordList;
         }
 
         ///<summary>

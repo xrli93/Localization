@@ -67,7 +67,7 @@ public:
     int nImgs = 1;
     int nExperiments = 1;
     Localizer mLocalizer{};
-    TopoMap<int> mMap{};
+    TopoMap mMap{};
     Tester() {}
 
     Tester(int numLearning, int numTest, int numImgs) :
@@ -80,7 +80,7 @@ public:
         cout << "Training No. ";
         for (size_t i = 0; i < nLearning; ++i)
         {
-            mLocalizer.LearnImage((*imgs)[i], room);
+            mLocalizer.LearnImage((*imgs)[i], room, 0, (float)(30 + i));
             cout << i << ", ";
         }
         cout << endl;
@@ -300,73 +300,75 @@ public:
             string configPath = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\config.bin";
 
 
-            //{
-            //auto t1 = std::chrono::high_resolution_clock::now();
-            //{
-            //    ifstream ifs(filename, ios::binary);
-            //    cereal::PortableBinaryInputArchive iarchive(ifs);
-            //    iarchive(mLocalizer);
-            //}
-            //{
-            //    ifstream ifs(configPath, ios::binary);
-            //    cereal::PortableBinaryInputArchive iarchive(ifs);
-            //    iarchive(mConfig);
-            //}
-            //auto t2 = std::chrono::high_resolution_clock::now();
-            //double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            //cout << "Model loaded " << timings << endl;
-            //}
-
-            // Training and saving dict
             {
-                string salon = "Salon";
-                string cuisine = "Cuisine";
-                string reunion = "Reunion";
-                mLocalizer.AddRoom(salon);
-                mLocalizer.AddRoom(cuisine);
-                mLocalizer.AddRoom(reunion);
-                Train(&salonImgs, salon);
-                ReportDict();
-                Train(&cuisineImgs, cuisine);
-                ReportDict();
-                Train(&reunionImgs, reunion);
-                ReportDict();
-                //Train(&mangerImgs, MANGER);
-                //ReportDict();
-                cout << " Training done " << endl;
-                cout << endl << endl;
-
                 auto t1 = std::chrono::high_resolution_clock::now();
                 {
-                    ofstream ofs(filename, ios::binary);
-                    cereal::PortableBinaryOutputArchive oarchive(ofs);
-                    oarchive(mLocalizer);
+                    ifstream ifs(filename, ios::binary);
+                    cereal::PortableBinaryInputArchive iarchive(ifs);
+                    iarchive(mLocalizer);
                 }
                 {
-                    ofstream ofs(configPath, ios::binary);
-                    cereal::PortableBinaryOutputArchive oArchive(ofs);
-                    oArchive(mConfig);
+                    ifstream ifs(configPath, ios::binary);
+                    cereal::PortableBinaryInputArchive iarchive(ifs);
+                    iarchive(mConfig);
                 }
                 auto t2 = std::chrono::high_resolution_clock::now();
                 double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                cout << "Model saved" << timings << endl;
+                cout << "Model loaded " << timings << endl;
             }
+
+            // Training and saving dict
+            //{
+            //    string salon = "Salon";
+            //    string cuisine = "Cuisine";
+            //    string reunion = "Reunion";
+            //    mLocalizer.AddRoom(salon);
+            //    mLocalizer.AddRoom(cuisine);
+            //    mLocalizer.AddRoom(reunion);
+            //    Train(&salonImgs, salon);
+            //    ReportDict();
+            //    Train(&cuisineImgs, cuisine);
+            //    ReportDict();
+            //    Train(&reunionImgs, reunion);
+            //    ReportDict();
+            //    //Train(&mangerImgs, MANGER);
+            //    //ReportDict();
+            //    cout << " Training done " << endl;
+            //    cout << endl << endl;
+
+            //    auto t1 = std::chrono::high_resolution_clock::now();
+            //    {
+            //        ofstream ofs(filename, ios::binary);
+            //        cereal::PortableBinaryOutputArchive oarchive(ofs);
+            //        oarchive(mLocalizer);
+            //    }
+            //    {
+            //        ofstream ofs(configPath, ios::binary);
+            //        cereal::PortableBinaryOutputArchive oArchive(ofs);
+            //        oArchive(mConfig);
+            //    }
+            //    auto t2 = std::chrono::high_resolution_clock::now();
+            //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            //    cout << "Model saved" << timings << endl;
+            //}
 
             // Testing results
             {
                 string salon = "Salon";
                 string cuisine = "Cuisine";
                 string reunion = "Reunion";
-                mLocalizer.RemoveRoom(salon);
+                //mLocalizer.RemoveRoom(salon);
                 //ReportIncremental(salonTest, salon, results);
-                ReportIncremental(cuisineTest, cuisine, results);
-                ReportIncremental(reunionTest, reunion, results);
+                //ReportIncremental(cuisineTest, cuisine, results);
+                //ReportIncremental(reunionTest, reunion, results);
+                cout << mLocalizer.GetOrientationToLandmark(salonTest[0], 0) << endl;
+                cout << mLocalizer.GetOrientationToLandmark(salonTest[1], 0) << endl;
                 //ReportIncremental(mangerTest, MANGER, results);
             }
             //ReportResults(mangerTest, MANGER, results);
-            cout << mLocalizer.IsConnected(cuisine, salon);
-            cout << mLocalizer.IsConnected(cuisine, reunion);
-            cout << mLocalizer.IsConnected(salon, reunion);
+            //cout << mLocalizer.IsConnected(cuisine, salon);
+            //cout << mLocalizer.IsConnected(cuisine, reunion);
+            //cout << mLocalizer.IsConnected(salon, reunion);
             ReportDict();
             cout << endl << endl;
 
@@ -376,28 +378,104 @@ public:
 
 };
 
+class OrientationTester
+{
+public:
+    string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
+    vector<string> mRooms{ "Salon", "SalonNew"};
+    vector<string> mTypes{ "Train", "Test" };
+    vector<string> mSets{ "1","2" };
+    map<string, vector<float>> mRefs;
+    const double pi = 3.1415926; // radian or ?
+
+public:
+
+    void Run()
+    {
+        std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
+        std::cout.precision(0);
+        Test("1");
+        Test("2");
+    }
+    int GetIndex(string room)
+    {
+        return distance(mRooms.begin(), find(mRooms.begin(), mRooms.end(), room));
+    }
+
+    float GetDegrees(float radian)
+    {
+        return radian / pi * 180;
+    }
+
+    void Test(string set)
+    {
+        Localizer mLocalizer;
+        int nTrain = (set.compare("1") == 0) ? 6 : 12;
+        int nTest = 6;
+        cout << "In " << set << endl;
+        for (const string& room : mRooms)
+        {
+            mLocalizer.AddRoom(room);
+            for (size_t i = 1; i <= nTrain; i++)
+            {
+                string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
+                Mat img = imread(filename, IMREAD_COLOR); // Read the file
+                mLocalizer.LearnImage(img, room, GetIndex(room), (i-1) * 2 * pi / (float)nTrain);
+            }
+
+            cout << room << " angles ";
+            for (string type : mTypes)
+            {
+                for (string set : mSets)
+                {
+                    cout << " on " << type << " " << set << endl;
+                    if (type.compare("Train") == 0 && set.compare("2") == 0)
+                    {
+                        nTest = 12;
+                    }
+                    else
+                    {
+                        nTest = 6;
+                    }
+                    for (size_t i = 1; i <= nTest; i++)
+                    {
+                        string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
+                        Mat img = imread(filename, IMREAD_COLOR); // Read the file
+                        cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
+                    }
+                    cout << endl;
+                }
+            }
+            cout << endl;
+        }
+        cout << endl << endl;
+    }
+
+};
+
 int main() {
-
-    //try
+    //initParameters();
+    //int nExperiments = N_EXPERIMENTS;
+    //int nRooms = 3;
+    //vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+    //vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+    //for (size_t i = 0; i < nExperiments; ++i)
     //{
-    initParameters();
-    int nExperiments = N_EXPERIMENTS;
-    vector<float> stats(mConfig.GetRoomCount() * 2 + 1, 0); // accuracy and unidentified
-    vector<float> correctStats(mConfig.GetRoomCount() * 2, 0); // accuracy and unidentified
-    for (size_t i = 0; i < nExperiments; ++i)
-    {
-        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-        //Tester mTester = Tester();
-        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-    }
+    //    cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+    //    Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+    //    //Tester mTester = Tester();
+    //    mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+    //}
 
-    cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-    for (size_t i = 0; i < stats.size(); ++i)
-    {
-        cout << stats[i] / nExperiments << ", ";
-    }
-    cout << endl;
+    //cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+    //for (size_t i = 0; i < stats.size(); ++i)
+    //{
+    //    cout << stats[i] / nExperiments << ", ";
+    //}
+    //cout << endl;
+    OrientationTester lTester;
+    lTester.Run();
+
     std::cin.get();
     return 0;
 }

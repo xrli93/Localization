@@ -83,7 +83,7 @@ namespace Localization
 
         // Learn one image and return the number of features learrnt
         // TODO: perhaps split and expose features so that it can be also used by TopoMap
-        int LearnImage(const Mat& img, int label)
+        int LearnImage(const Mat& img, int label, const int& iLandmark = -1, const float& iOrientation = 0)
         {
             Mat features = CalculateFeatures(img);
             // Set origin node to zero
@@ -91,13 +91,38 @@ namespace Localization
             mDict.SetRootNodeCenter(origin);
             for (int i = 0; i < features.rows; ++i)
             {
-                mDict.AddFeature(features.row(i), label);
-                //std::cout << "feature No." << i << endl;
+                auto wordList = mDict.AddFeature(features.row(i), label);
+                if (iLandmark != -1)
+                {
+                    for (size_t i = 0; i < wordList.size(); i++)
+                    {
+                        wordList[i]->AddOrientation(iLandmark, iOrientation);
+                    }
+                }
             }
             int nFeatures = (int)features.rows;
             mFeatureCount += nFeatures;
             mRoomFeaturesCount[label] += nFeatures;
             return nFeatures;
+        }
+
+        float GetOrientationToLandmark(const Mat& img, const int& landmark)
+        {
+            shared_ptr<Mat> features = make_shared<Mat>(CalculateFeatures(img));
+            vector<float> orientations;
+            for (size_t i = 0; i < features->rows; ++i)
+            {
+                vector<shared_ptr<Word<Mat> > > wordList = mDict.Search(features->row(i), FULL_SEARCH);
+                for (size_t i = 0; i < wordList.size(); i++)
+                {
+                    float lOrientation = wordList[i]->GetOrientation(landmark);
+                    if (lOrientation != NO_ORIENTATION) // or numerical_limits::min()
+                    {
+                        orientations.push_back(lOrientation);
+                    }
+                }
+            }
+            return Average(orientations);
         }
 
         // First level voting

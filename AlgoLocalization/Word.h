@@ -10,11 +10,34 @@
 #include "cereal\archives\portable_binary.hpp"
 #include "cereal\types\vector.hpp"
 #include "cereal\types\memory.hpp"
+#include "cereal\types\map.hpp"
 using namespace std;
 using namespace cv;
 
 namespace Localization
 {
+
+    template <typename T>
+    T Average(const vector<T>& iArray)
+    {
+        T average = 0;
+        for (const T& x : iArray)
+        {
+            average += x;
+        }
+        return (average /= iArray.size());
+    }
+    template <typename T>
+    T StandarDeviation(const vector<T>& iArray)
+    {
+        T average = Average(iArray);
+        T sigma = 0;
+        for (const T& x : iArray)
+        {
+            sigma += (x - average) * (x - average);
+        }
+        return (T)sqrt(sigma / iArray.size());
+    }
 
     template <class T>
     class Word
@@ -23,12 +46,13 @@ namespace Localization
         T mCenter; // word center in feature space
         float mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
+        map<int, vector<float>> mOrientation; // orientation(float) in ith landmark(int). Attention! one word can have multiple orientations at one landmark
 
         friend class cereal::access;
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mCenter, mRadius, mPresenceRooms);
+            archive(mCenter, mRadius, mPresenceRooms, mOrientation);
         }
 
 
@@ -98,6 +122,37 @@ namespace Localization
                 assert(mPresenceRooms.size() - 1 == indexRoom);
             }
         }
+
+        void AddOrientation(const int& iLandmark, const float& iOrientation)
+        {
+            auto lIter = mOrientation.find(iLandmark);
+            if (lIter == mOrientation.end()) // No existing orientations
+            {
+                vector<float> lOrientation;
+                lOrientation.push_back(iOrientation);
+                mOrientation.insert(make_pair(iLandmark, lOrientation));
+            }
+            else // already exists entry in map
+            {
+                lIter->second.push_back(iOrientation);
+            }
+        }
+
+        float GetOrientation(const int& iLandmark)
+        {
+            auto lIter = mOrientation.find(iLandmark);
+            if (lIter != mOrientation.end())
+            {
+                vector<float> orientations = lIter->second;
+                //if standard deviation too large, neglect word
+                if (StandarDeviation(orientations) < THRESHOLD_ORIENTATION)
+                {
+                    return Average(orientations);
+                }
+            }
+            return NO_ORIENTATION; // n'importe quoi!
+        }
+
 
         bool ContainFeature(T feature)
         {
