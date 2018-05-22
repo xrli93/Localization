@@ -8,6 +8,13 @@ using namespace Localization;
 
 namespace Localization
 {
+    namespace Angles
+    {
+        float ConvertAngle180(float angle)
+        {
+            return (angle > 180) ? (angle - 360) : angle;
+        }
+    }
 
     int CountVotes(vector<float>& votes, shared_ptr<float> quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
     {
@@ -122,7 +129,18 @@ namespace Localization
                     }
                 }
             }
-            return Average(orientations);
+            //return Angles::CircularMean(orientations);
+            if (USE_CIRCULAR)
+            {
+                float stdDev = Angles::CircularStdDev(orientations);
+                //cout << "Std dev: " << stdDev << ", Angle: ";
+                return (stdDev < THRESHOLD_CIRCULAR_SECOND) ? Angles::ConvertAngle180(Angles::CircularMean(orientations)) : NO_ORIENTATION;
+            }
+            else
+            {
+                cout << "Std dev: " << StandarDeviation(orientations) << ", Angle: ";
+                return Angles::ConvertAngle180(Average(orientations));
+            }
         }
 
         // First level voting

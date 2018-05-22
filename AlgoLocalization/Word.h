@@ -2,6 +2,7 @@
 #include<vector>
 #include<assert.h>
 #include<cmath>
+#include <math.h>`
 #include<memory>
 #include "Constants.h"
 #include "opencv2/highgui.hpp"
@@ -16,7 +17,56 @@ using namespace cv;
 
 namespace Localization
 {
+    namespace Angles
+    {
 
+        float DegToRad(float iAngleInDegree)
+        {
+            return 2 * PI * (iAngleInDegree / 360);
+        }
+
+        float RadToDeg(float iAngleInRad)
+        {
+            return 360 * (iAngleInRad / (2 * PI));
+        }
+
+        // iArray of angles in degrees
+        float CircularMean(const vector<float>& iAnglesInDegree)
+        {
+            float sumSin = 0;
+            float sumCos = 0;
+            for (const float& x : iAnglesInDegree)
+            {
+                sumCos += cos(DegToRad(x));
+                sumSin += sin(DegToRad(x));
+            }
+            sumCos /= iAnglesInDegree.size();
+            sumSin /= iAnglesInDegree.size();
+            float mean = RadToDeg(atan2(sumSin, sumCos)); // [-pi, pi) -> [0, 360);
+            if (mean < 0)
+            {
+                mean += 360;
+            }
+            return mean;
+        }
+
+        float CircularStdDev(const vector<float>& iAnglesInDegree)
+        {
+            float sumSin = 0;
+            float sumCos = 0;
+            for (const float& x : iAnglesInDegree)
+            {
+                sumCos += cos(DegToRad(x));
+                sumSin += sin(DegToRad(x));
+            }
+            sumCos /= iAnglesInDegree.size();
+            sumSin /= iAnglesInDegree.size();
+            float stdDev = sqrt(-log(sumSin * sumSin + sumCos * sumCos));
+            return stdDev;
+        }
+
+
+    }
     template <typename T>
     T Average(const vector<T>& iArray)
     {
@@ -27,6 +77,8 @@ namespace Localization
         }
         return (average /= iArray.size());
     }
+
+
     template <typename T>
     T StandarDeviation(const vector<T>& iArray)
     {
@@ -36,7 +88,9 @@ namespace Localization
         {
             sigma += (x - average) * (x - average);
         }
+        //cout << "Circular: " << Angles::CircularStdDev(iArray) << " " << "normal" << sqrt(sigma / iArray.size()) << endl;
         return (T)sqrt(sigma / iArray.size());
+        //return 0;
     }
 
     template <class T>
@@ -145,9 +199,19 @@ namespace Localization
             {
                 vector<float> orientations = lIter->second;
                 //if standard deviation too large, neglect word
-                if (StandarDeviation(orientations) < THRESHOLD_ORIENTATION)
+                if (USE_CIRCULAR)
                 {
-                    return Average(orientations);
+                    if (orientations.size() > 0 && Angles::CircularStdDev(orientations) < THRESHOLD_CIRCULAR)
+                    {
+                        return Angles::CircularMean(orientations);
+                    }
+                }
+                else
+                {
+                    if (orientations.size() > 0 && StandarDeviation(orientations) < THRESHOLD_ORIENTATION)
+                    {
+                        return Average(orientations);
+                    }
                 }
             }
             return NO_ORIENTATION; // n'importe quoi!

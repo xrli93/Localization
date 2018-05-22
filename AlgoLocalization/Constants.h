@@ -57,8 +57,13 @@ const int mNorm = NORM_KL;
 #define N_IMGS 1
 #define N_EXPERIMENTS 1
 #define WEIGHT_COLOR 0.60 // 0.5
-#define THRESHOLD_ORIENTATION 0.1f
+#define THRESHOLD_ORIENTATION 20.0f
+#define THRESHOLD_CIRCULAR 1
+#define THRESHOLD_CIRCULAR_SECOND 1
 #define NO_ORIENTATION 1000.0f
+#define ANGLE_BIN_SIZE 20.0f
+#define PI 3.14159265358979323846
+#define USE_CIRCULAR true
 
 // Datasets 
 string salonTrainPath;

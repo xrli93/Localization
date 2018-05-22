@@ -382,7 +382,8 @@ class OrientationTester
 {
 public:
     string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
-    vector<string> mRooms{ "Salon", "SalonNew"};
+    //vector<string> mRooms{ "Salon", "SalonNew"};
+    vector<string> mRooms{ "Salon", "Cuisine", "Hall"};
     vector<string> mTypes{ "Train", "Test" };
     vector<string> mSets{ "1","2" };
     map<string, vector<float>> mRefs;
@@ -420,7 +421,7 @@ public:
             {
                 string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
                 Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                mLocalizer.LearnImage(img, room, GetIndex(room), (i-1) * 2 * pi / (float)nTrain);
+                mLocalizer.LearnImage(img, room, GetIndex(room), (float)(i-1) / nTrain * 360);
             }
 
             cout << room << " angles ";
@@ -441,7 +442,8 @@ public:
                     {
                         string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
                         Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                        cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
+                        //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
+                        cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
                     }
                     cout << endl;
                 }
