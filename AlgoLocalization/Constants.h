@@ -6,8 +6,7 @@ using namespace std;
 // ---------------- Dictionary parameters ----------------
 #define RADIUS 50.0
 #define RADIUS_SIFT 180 // SIFT
-//#define RADIUS_SIFT 120 // ORB
-//#define RADIUS_SIFT 0.20 // SURF
+//#define RADIUS_SIFT 150 // FREAK
 #define ENABLE_HISTOGRAM_NORMALIZATION true
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
@@ -15,8 +14,8 @@ using namespace std;
 #define NUM_MAX_SIFT 180
 #define FRONTIER_SIFT 8000
 #define FRONTIER_COLOR 8000
-#define NUM_MAX_WORDS 250
-#define K_SPLIT 5
+#define NUM_MAX_WORDS 500
+#define K_SPLIT 10
 #define MAX_CHILD_NUM 1
 
 // ----------------Really constant ----------------
@@ -36,10 +35,11 @@ using namespace std;
 #define FULL_SEARCH true
 #define ENABLE_CLAHE false
 #define ENABLE_CORRECTION false
-#define ENABLE_INCREMENTAL true
+#define ENABLE_INCREMENTAL false
 #define PRIORITIZE_SIFT true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
+#define USE_FREAK true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
 
@@ -50,7 +50,7 @@ const int mNorm = NORM_KL;
 #define VERBOSE true
 
 // ------------ Hyperparameters ------------
-#define TEST_SIZE 30
+#define TEST_SIZE 10
 #define TRAIN_SIZE 50
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
@@ -74,6 +74,7 @@ string salonTestPath;
 string cuisineTestPath;
 string reunionTestPath;
 string mangerTestPath;
+
 #define FOLDER_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\"
 #define SALON_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\salon_train\\"
 #define CUISINE_TRAIN_V2 "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\cuisine_train\\"
@@ -102,10 +103,10 @@ void initParameters()
         salonTrainPath = SALON_TRAIN_V2;
         cuisineTrainPath = CUISINE_TRAIN_V2;
         reunionTrainPath = REUNION_TRAIN_V2;
+        mangerTrainPath = MANGER_TRAIN_V2;
         salonTestPath = SALON_TEST_V2;
         cuisineTestPath = CUISINE_TEST_V2;
         reunionTestPath = REUNION_TEST_V2;
-        mangerTrainPath = MANGER_TRAIN_V2;
         mangerTestPath = MANGER_TRAIN_V2;
     }
 
@@ -173,7 +174,7 @@ struct Config
 
 Config mConfig;
 
-
+bool DEBUG = true;
 
 #define SALON 0
 #define CUISINE 1

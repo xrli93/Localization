@@ -88,6 +88,9 @@ namespace Localization
             }
         }
 
+        // For each word, display roomPresences
+        void CheckWords() {}
+
         // Count words in dict
         int CountWords() { return CountWords(mRootNode); }
 
@@ -192,17 +195,33 @@ namespace Localization
             vector<shared_ptr<Word<T> > > wordList = Search(feature, FULL_SEARCH);
             if (!wordList.empty())
             {
-                typename vector<shared_ptr<Word<T> > > ::iterator iter;
-                for (iter = wordList.begin(); iter != wordList.end(); iter++)
+                if (indexRoom == mConfig.GetRoomIndex("Cuisine") && false)
                 {
-                    (*iter)->UpdateLabel(indexRoom);
+
                 }
+                else
+                {
+                    typename vector<shared_ptr<Word<T> > > ::iterator iter;
+                    for (iter = wordList.begin(); iter != wordList.end(); iter++)
+                    {
+                        // DEBUG
+                        (*iter)->UpdateLabel(indexRoom);
+                    }
+                }
+
             }
             else
             {
                 shared_ptr<Word<T> > newWord = make_shared<Word<T> >(feature, indexRoom, mRadius);
                 shared_ptr<Node<T> > node = AddWordToDict(newWord);
                 wordList.push_back(newWord);
+                // DEBUG
+                if (indexRoom == mConfig.GetRoomIndex("Reunion") || indexRoom == mConfig.GetRoomIndex("Cuisine"))
+                {
+
+                    //cout << " # ";
+                }
+                // END_DEBUG
                 if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
                 {
                     Expand(node);

@@ -137,20 +137,19 @@ namespace Localization
         // TODO: make general
         vector<int> AnalyseWords()
         {
-            assert(GetRoomCount() == 3);
             vector<int> count(WORD_TYPES, 0);
             vector<int> total(WORD_TYPES, 0);
             for (size_t i = 0; i < mWords.size(); ++i)
             {
                 shared_ptr<Word<T> > ptrWord = mWords[i];
                 vector<bool> labels = ptrWord->GetLabels();
-                bool salon = labels[SALON];
-                bool cuisine = labels[CUISINE];
-                bool reunion = labels[REUNION];
+                bool salon = labels[mConfig.GetRoomIndex("Salon")];
+                bool cuisine = labels[mConfig.GetRoomIndex("Cuisine")];
+                bool reunion = labels[mConfig.GetRoomIndex("Reunion")];
 
-                count[SALON] = (int)salon;
-                count[CUISINE] = (int)cuisine;
-                count[REUNION] = (int)reunion;
+                count[mConfig.GetRoomIndex("Salon")]= (int)salon;
+                count[mConfig.GetRoomIndex("Cuisine")] = (int)cuisine;
+                count[mConfig.GetRoomIndex("Reunion")] = (int)reunion;
                 count[3] = (int)(salon && cuisine);
                 count[4] = (int)(salon && reunion);
                 count[5] = (int)(cuisine && reunion);

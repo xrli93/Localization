@@ -172,8 +172,9 @@ namespace Localization
             }
             else
             {
-                mPresenceRooms.push_back(true);
-                assert(mPresenceRooms.size() - 1 == indexRoom);
+                //mPresenceRooms.push_back(true);
+                //assert(mPresenceRooms.size() - 1 == indexRoom);
+                cout << "Error adding new room information!" << endl;
             }
         }
 
@@ -257,9 +258,24 @@ namespace Localization
             {
                 for (size_t i = 0; i < scores.size(); ++i)
                 {
-                    scores[i] = mPresenceRooms[i] ? log(mConfig.GetRoomCount() * 1.0 / roomsSeen) / log(mConfig.GetRoomCount()) : 0;
+                    scores[i] = mPresenceRooms[i] ? (log(mConfig.GetRoomCount() * 1.0 / (float)roomsSeen) / log(mConfig.GetRoomCount())) : 0;
                 }
             }
+
+            //if (roomsSeen == 1)
+            //{
+            //    for (size_t i = 0; i < scores.size(); i++)
+            //    {
+            //        scores[i] = mPresenceRooms[i] ? 1 : 0;
+            //    }
+            //}
+            //DEBUG
+            //for (auto& x : scores)
+            //{
+            //    cout << x << ",";
+            //}
+            //cout << endl;
+            //END_DEBUG
             return scores;
         }
 
@@ -316,7 +332,6 @@ namespace Localization
                 diff = y - x;
             }
             float dist = norm(diff, NORM_L2);
-            //float dist = compareHist(x, y, CV_COMP_CHISQR);
             if (DISP_DEBUG)
             {
                 cout << dist << endl;
@@ -326,13 +341,13 @@ namespace Localization
         else if (x.cols == DIM_COLOR_HIST)
         {
             //TODO: implement or find diffusion distance as mentioned in Filliat 08 [27]
-            //return compareHist(x, y, CV_COMP_CHISQR);  // lower the closer. CV_COMP_BHATTACHARYYA possible.
+            //return compareHist(x, y, CV_COMP_CHISQR);  
+            // lower the closer. CV_COMP_BHATTACHARYYA possible.
 
             float dist = (mNorm == NORM_KL) ? compareHist(x, y, CV_COMP_KL_DIV) : DiffusionDistance(x, y, 1.0);
             //float dist = DiffusionDistance(x, y, 1.2);
             //cout << dist << endl;
             return dist;  // lower the closer. CV_COMP_BHATTACHARYYA possible.
-
         }
     }
 

@@ -29,10 +29,10 @@ namespace Localization
         Localizer() { };
 
         ~Localizer() { };
-        //vector<int> AnalyseDict(int featureMethod)
-        //{
-        //    return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
-        //}
+        vector<int> AnalyseDict(int featureMethod)
+        {
+            return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
+        }
 
         vector<int> CountWords()
         {

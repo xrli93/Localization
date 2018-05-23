@@ -16,7 +16,7 @@ namespace Localization
         }
     }
 
-    int CountVotes(vector<float>& votes, shared_ptr<float> quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
+    int CountVotes(vector<float> votes, shared_ptr<float> quality = NULL, float threshold = THRESHOLD_FIRST_VOTE, double sumVotes = 0)
     {
         int result;
         vector<float>::iterator maxIter = max_element(votes.begin(), votes.end());
@@ -42,6 +42,14 @@ namespace Localization
         if (threshold == THRESHOLD_SECOND_VOTE && DISP_INCREMENTAL)
         {
             cout << maxVote << " " << secondVote << " " << lSumVote << " " << *quality << " " << endl;
+        }
+        if (DEBUG)
+        {
+            for (auto& x : votes)
+            {
+                cout << x << ", ";
+            }
+            cout << endl;
         }
         return (lQuality >= threshold) ? result : -1;
     }
@@ -83,6 +91,11 @@ namespace Localization
             mDict.RemoveRoom(room);
         }
 
+        vector<int> AnalyseDict()
+        {
+            return mDict.AnalyseWords();
+        }
+
 
     public:
 
@@ -99,6 +112,7 @@ namespace Localization
             for (int i = 0; i < features.rows; ++i)
             {
                 auto wordList = mDict.AddFeature(features.row(i), label);
+                //cout << wordList.size() << ", " << mConfig.GetRoomName(label) << endl;
                 if (iLandmark != -1)
                 {
                     for (size_t i = 0; i < wordList.size(); i++)
@@ -133,7 +147,7 @@ namespace Localization
             if (USE_CIRCULAR)
             {
                 float stdDev = Angles::CircularStdDev(orientations);
-                //cout << "Std dev: " << stdDev << ", Angle: ";
+                cout << "Std dev: " << stdDev << ", Angle: ";
                 return (stdDev < THRESHOLD_CIRCULAR_SECOND) ? Angles::ConvertAngle180(Angles::CircularMean(orientations)) : NO_ORIENTATION;
             }
             else
@@ -148,6 +162,8 @@ namespace Localization
         {
             shared_ptr<Mat> features = make_shared<Mat>(CalculateFeatures(img));
             vector<float> votes(mConfig.GetRoomCount(), 0);
+            int lNumFeatures = features->rows;
+            int lNumWords = 0;
             for (size_t i = 0; i < features->rows; ++i)
             {
                 vector<shared_ptr<Word<Mat> > > wordList = mDict.Search(features->row(i), FULL_SEARCH);
@@ -157,13 +173,16 @@ namespace Localization
                     // voting by words
                     vector<float> lVote = (*iter)->Vote();
                     transform(votes.begin(), votes.end(), lVote.begin(), votes.begin(),
-                        plus<int>());
+                        plus<float>());
                 }
+                lNumWords += wordList.size();
             }
             if (quality == NULL)
             {
                 shared_ptr<float> quality = make_shared<float>();
             }
+            //DEBUG
+            cout << "Features Seen " << lNumFeatures << " and words " << lNumWords<< endl;
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             mListFeaturesSeen.push_back(features);
             return result;
@@ -177,6 +196,7 @@ namespace Localization
                 mDict.AddFeature(features.row(i), ref);
             }
         }
+
 
         // Follows directly a call to IdentifyImage()
         void ReducImage(int label)
@@ -252,25 +272,31 @@ namespace Localization
                 Ptr<CLAHE> clahe = createCLAHE(10, Size(8, 8));
                 clahe->apply(lImg, lImg);
             }
-            //imshow(" ", lImg);
-            //waitKey(100);
+
             Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-            //Ptr<Feature2D> f2d = xfeatures2d::SURF::create(400);
+            //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create();
+            //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create();
+
+            Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
             //Ptr<Feature2D> f2d = ORB::create(150);
 
             std::vector<KeyPoint> keypoints;
-            f2d->detect(lImg, keypoints);
-
             Mat descriptors;
+            f2d->detect(lImg, keypoints);
             f2d->compute(lImg, keypoints, descriptors);
+            //extrait->compute(lImg, keypoints, descriptors);
             if (descriptors.dims < 2)
             {
                 cout << "Error getting desccriptors." << endl;
             }
+            //cout << descriptors;
+            //cout << descriptors.cols;
+            //cout << descriptors.rows;
             //cout << descriptors.type();
             //cout << descriptors.size();
             return descriptors;
         }
+
 
     };
 
@@ -323,7 +349,7 @@ namespace Localization
             // Type 2: 20 x 20 every 10 pixels
             CalculateWindows(img, width, height, 80, 40, &imgWindows); // Type 1
             CalculateWindows(img, width, height, 120, 40, &imgWindows);
-            CalculateWindows(img, width, height, 40, 40, &imgWindows);
+            //CalculateWindows(img, width, height, 40, 40, &imgWindows);
             //CalculateWindows(img, width, height, 120, 40, &imgWindows); // Type 1
             return imgWindows;
         }
