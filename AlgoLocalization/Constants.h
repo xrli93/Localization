@@ -4,9 +4,13 @@
 #include <algorithm>
 using namespace std;
 // ---------------- Dictionary parameters ----------------
-#define RADIUS 50.0
-#define RADIUS_SIFT 180 // SIFT
-//#define RADIUS_SIFT 150 // FREAK
+#define RADIUS 0.0
+//#define RADIUS_SIFT 180 // 
+// DAISY 0.05
+// FREAK 5 ~ 10 bad!
+// BRIEF 180
+float RADIUS_SIFT = 3;
+
 #define ENABLE_HISTOGRAM_NORMALIZATION true
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
@@ -19,7 +23,7 @@ using namespace std;
 #define MAX_CHILD_NUM 1
 
 // ----------------Really constant ----------------
-#define THRESHOLD_FIRST_VOTE 0.1
+#define THRESHOLD_FIRST_VOTE 0.10
 #define THRESHOLD_SECOND_VOTE 0.25
 #define DIM_COLOR_HIST 16
 #define DIM_SIFT 128
@@ -30,7 +34,6 @@ using namespace std;
 #define NUM_MIN_FEATURES 3000
 #define NUM_MAX_IMAGES 5
 
-
 // ------------ Model ----------------
 #define FULL_SEARCH true
 #define ENABLE_CLAHE false
@@ -40,6 +43,7 @@ using namespace std;
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
 #define USE_FREAK true
+#define USE_SYMMETRY true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
 
@@ -47,10 +51,12 @@ const int mNorm = NORM_KL;
 #define DISP_DEBUG false
 #define DISP_IMAGE false
 #define DISP_INCREMENTAL false
-#define VERBOSE true
+#define VERBOSE false
+#define READ_CEREAL false
+bool DEBUG = false;
 
 // ------------ Hyperparameters ------------
-#define TEST_SIZE 10
+#define TEST_SIZE 30
 #define TRAIN_SIZE 50
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
@@ -98,6 +104,17 @@ const int dataSet = DATA_V2_VAR;
 
 void initParameters()
 {
+    if (USE_FREAK)
+    {
+        RADIUS_SIFT = 0.07; // DAISY
+        //RADIUS_SIFT = 210; // AKAZE
+        //RADIUS_SIFT = 180; // BRIEF
+        //RADIUS_SIFT = 8;
+    }
+    else
+    {
+        RADIUS_SIFT = 180;
+    }
     if (dataSet == DATA_V2)
     {
         salonTrainPath = SALON_TRAIN_V2;
@@ -158,9 +175,9 @@ struct Config
         return distance(mRooms.begin(),
             find(mRooms.begin(), mRooms.end(), room));
     }
-    
-    const string& GetRoomName(int index) 
-    { 
+
+    const string& GetRoomName(int index)
+    {
         if (index >= 0 && index < mRooms.size())
         {
             return mRooms[index];
@@ -174,7 +191,6 @@ struct Config
 
 Config mConfig;
 
-bool DEBUG = true;
 
 #define SALON 0
 #define CUISINE 1

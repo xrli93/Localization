@@ -101,12 +101,13 @@ namespace Localization
         float mRadius = RADIUS; // radius of word 
         vector<bool> mPresenceRooms; // seen in which rooms
         map<int, vector<float>> mOrientation; // orientation(float) in ith landmark(int). Attention! one word can have multiple orientations at one landmark
+        map<int, vector<T>> mSeenFeatures; // features seen with their room index
 
         friend class cereal::access;
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mCenter, mRadius, mPresenceRooms, mOrientation);
+            archive(mCenter, mRadius, mPresenceRooms, mOrientation, mSeenFeatures);
         }
 
 
@@ -193,6 +194,27 @@ namespace Localization
             }
         }
 
+        void AddSeenFeature(const int& iRoomIndex, const T& iFeature)
+        {
+            auto lIter = mSeenFeatures.find(iRoomIndex);
+            if (lIter == mSeenFeatures.end()) // No existing orientations
+            {
+                vector<T> lFeatureList;
+                lFeatureList.push_back(iFeature);
+                mSeenFeatures.insert(make_pair(iRoomIndex, lFeatureList));
+            }
+            else // already exists entry in map
+            {
+                lIter->second.push_back(iFeature);
+            }
+        }
+
+        map<int, vector<T>> GetSeenFeatures()  
+        {
+            return mSeenFeatures;
+        }
+
+
         float GetOrientation(const int& iLandmark)
         {
             auto lIter = mOrientation.find(iLandmark);
@@ -221,6 +243,10 @@ namespace Localization
 
         bool ContainFeature(T feature)
         {
+            if (mRadius == RADIUS_SIFT)
+            {
+                //cout << Localization::CalculateDistance(feature, mCenter) << ", " << mRadius << endl;
+            }
             return (Localization::CalculateDistance(feature, mCenter) < mRadius) ? true : false;
         }
 
@@ -320,22 +346,35 @@ namespace Localization
         if (x.cols == DIM_SIFT || x.cols != DIM_COLOR_HIST) //  Sift features
         {
             //cout << compareHist(x, y, CV_COMP_KL_DIV);
-            Mat diff(x.size(), x.type());
-            Mat temp(x.size(), x.type());
+            Mat diff(y.size(), y.type());
+            Mat temp(y.size(), y.type());
             if (y.type() != x.type())
             {
-                y.convertTo(temp, x.type());
-                diff = temp - x;
+                //cout << x << endl << y << endl;
+                x.convertTo(temp, y.type());
+                diff = temp - y;
             }
             else
             {
                 diff = y - x;
             }
-            float dist = norm(diff, NORM_L2);
+            float dist = 0;
+            //cout << diff.type() << endl;
+            if (USE_FREAK)
+            {
+                //dist = norm(diff, NORM_HAMMING);
+                dist = norm(diff, NORM_L2);
+                //cout << diff << endl << dist << endl << endl;
+            }
+            else
+            {
+                dist = norm(diff, NORM_L2);
+            }
             if (DISP_DEBUG)
             {
                 cout << dist << endl;
             }
+            
             return dist;
         }
         else if (x.cols == DIM_COLOR_HIST)

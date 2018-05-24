@@ -195,33 +195,25 @@ namespace Localization
             vector<shared_ptr<Word<T> > > wordList = Search(feature, FULL_SEARCH);
             if (!wordList.empty())
             {
-                if (indexRoom == mConfig.GetRoomIndex("Cuisine") && false)
+                typename vector<shared_ptr<Word<T> > > ::iterator iter;
+                for (iter = wordList.begin(); iter != wordList.end(); iter++)
                 {
-
-                }
-                else
-                {
-                    typename vector<shared_ptr<Word<T> > > ::iterator iter;
-                    for (iter = wordList.begin(); iter != wordList.end(); iter++)
+                    (*iter)->UpdateLabel(indexRoom);
+                    if (USE_SYMMETRY)
                     {
-                        // DEBUG
-                        (*iter)->UpdateLabel(indexRoom);
+                        (*iter)->AddSeenFeature(indexRoom, feature);
                     }
                 }
-
             }
             else
             {
                 shared_ptr<Word<T> > newWord = make_shared<Word<T> >(feature, indexRoom, mRadius);
                 shared_ptr<Node<T> > node = AddWordToDict(newWord);
-                wordList.push_back(newWord);
-                // DEBUG
-                if (indexRoom == mConfig.GetRoomIndex("Reunion") || indexRoom == mConfig.GetRoomIndex("Cuisine"))
+                if (USE_SYMMETRY)
                 {
-
-                    //cout << " # ";
+                    ReviewFeatures(newWord, node);
                 }
-                // END_DEBUG
+                wordList.push_back(newWord);
                 if (node->GetWordsCount() > NUM_MAX_WORDS) // Many words necessary to create new nodes
                 {
                     Expand(node);
@@ -230,6 +222,32 @@ namespace Localization
             // Subtle point: if return constant reference, it will not increment the counter
             // So wordList will be empty!
             return wordList;
+        }
+
+        // Make symmetrical learnings
+        // Repass old features to the new word
+        void ReviewFeatures(shared_ptr<Word<T>> iWord, shared_ptr<Node<T>> iNode)
+        {
+            vector<shared_ptr<Word<T>>> lWordList = iNode->GetWords();
+            for (size_t i = 0; i < lWordList.size(); i++)
+            {
+                Word<T> lWord = *(lWordList[i]);
+                if (CalculateDistance(lWord.GetCenter(), iWord->GetCenter()) <= 2 * iWord->GetRadius())
+                {
+                    map<int, vector<T>> lFeatures = lWord.GetSeenFeatures();
+                    for (auto& x : lFeatures)
+                    {
+                        vector<T> lSeenFeatures = x.second;
+                        for (T& lFeature : lSeenFeatures)
+                        {
+                            if (iWord->ContainFeature(lFeature))
+                            {
+                                iWord->UpdateLabel(x.first);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         ///<summary>

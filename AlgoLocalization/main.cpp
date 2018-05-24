@@ -302,25 +302,25 @@ public:
             string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\dict.bin";
             string configPath = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\config.bin";
 
-
-            //{
-            //    // Read data
-            //    auto t1 = std::chrono::high_resolution_clock::now();
-            //    {
-            //        ifstream ifs(filename, ios::binary);
-            //        cereal::PortableBinaryInputArchive iarchive(ifs);
-            //        iarchive(mLocalizer);
-            //    }
-            //    {
-            //        ifstream ifs(configPath, ios::binary);
-            //        cereal::PortableBinaryInputArchive iarchive(ifs);
-            //        iarchive(mConfig);
-            //    }
-            //    auto t2 = std::chrono::high_resolution_clock::now();
-            //    double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            //    cout << "Model loaded " << timings << endl;
-            //}
-
+            if (READ_CEREAL)
+            {
+                // Read data
+                auto t1 = std::chrono::high_resolution_clock::now();
+                {
+                    ifstream ifs(filename, ios::binary);
+                    cereal::PortableBinaryInputArchive iarchive(ifs);
+                    iarchive(mLocalizer);
+                }
+                {
+                    ifstream ifs(configPath, ios::binary);
+                    cereal::PortableBinaryInputArchive iarchive(ifs);
+                    iarchive(mConfig);
+                }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                double timings = (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                cout << "Model loaded " << timings << endl;
+            }
+            else
             {
                 // Training and saving dict
                 string salon = "Salon";
@@ -330,14 +330,14 @@ public:
                 mLocalizer.AddRoom(salon);
                 mLocalizer.AddRoom(cuisine);
                 mLocalizer.AddRoom(reunion);
-                //mLocalizer.AddRoom(manger);
+                mLocalizer.AddRoom(manger);
 
-                Train(&cuisineImgs, cuisine);
+                Train(&salonImgs, salon);
+                //Train(&cuisineImgs, cuisine);
                 Train(&reunionImgs, reunion);
+                Train(&cuisineImgs, cuisine);
+                Train(&mangerImgs, manger);
                 //Train(&reunionImgs, reunion);
-                //Train(&reunionImgs, reunion);
-                //Train(&salonImgs, salon);
-                //Train(&salonImgs, salon);
 
                 //ReportDict();
                 cout << " Training done " << endl;
@@ -367,9 +367,11 @@ public:
                 string manger = "Manger";
                 //mLocalizer.RemoveRoom(salon);
                 ////ReportIncremental(salonTest, salon, results);
-                DEBUG = true;
+                //DEBUG = true;
+                ReportIncremental(salonTest, salon, results);
                 ReportIncremental(cuisineTest, cuisine, results);
                 ReportIncremental(reunionTest, reunion, results);
+                ReportIncremental(mangerTest, manger, results);
                 //Train(&reunionImgs, reunion);
                 //ReportIncremental(reunionTest, reunion, results);
                 //Train(&cuisineImgs, cuisine);

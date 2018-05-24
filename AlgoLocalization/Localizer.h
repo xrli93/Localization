@@ -26,7 +26,11 @@ namespace Localization
             archive(mSIFTLearner, mColorLearner);
         }
     public:
-        Localizer() { };
+        Localizer() 
+        {
+            mSIFTLearner = SIFTImageLearner();
+            mColorLearner = ColorHistogramLearner();
+        };
 
         ~Localizer() { };
         vector<int> AnalyseDict(int featureMethod)

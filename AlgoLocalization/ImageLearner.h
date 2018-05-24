@@ -181,8 +181,10 @@ namespace Localization
             {
                 shared_ptr<float> quality = make_shared<float>();
             }
-            //DEBUG
-            cout << "Features Seen " << lNumFeatures << " and words " << lNumWords<< endl;
+            if (DEBUG)
+            {
+                cout << "Features Seen " << lNumFeatures << " and words " << lNumWords << endl;
+            }
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             mListFeaturesSeen.push_back(features);
             return result;
@@ -249,7 +251,7 @@ namespace Localization
         SIFTImageLearner()
         {
             mDict.SetFeatureMethod(USE_SIFT);
-            mDict.SetRadius();
+            mDict.SetRadius(RADIUS_SIFT);
         }
 
         SIFTImageLearner(float radius)
@@ -273,18 +275,28 @@ namespace Localization
                 clahe->apply(lImg, lImg);
             }
 
-            Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-            //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create();
+            //Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+            Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(15);
             //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create();
+            //Ptr<Feature2D> f2d = AKAZE::create(5, 0, 3, 0.002f, 6, 4, 1);
 
-            Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
-            //Ptr<Feature2D> f2d = ORB::create(150);
+            //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
+            //Ptr<ORB> extrait = ORB::create(150);
+            Ptr<Feature2D> extrait = xfeatures2d::DAISY::create();
+            //Ptr<Feature2D> extrait = xfeatures2d::BriefDescriptorExtractor::create();
 
             std::vector<KeyPoint> keypoints;
             Mat descriptors;
             f2d->detect(lImg, keypoints);
-            f2d->compute(lImg, keypoints, descriptors);
-            //extrait->compute(lImg, keypoints, descriptors);
+            if (USE_FREAK)
+            {
+                extrait->compute(lImg, keypoints, descriptors);
+                //f2d->compute(lImg, keypoints, descriptors);
+            }
+            else
+            {
+                f2d->compute(lImg, keypoints, descriptors);
+            }
             if (descriptors.dims < 2)
             {
                 cout << "Error getting desccriptors." << endl;
@@ -307,7 +319,7 @@ namespace Localization
         ColorHistogramLearner()
         {
             mDict.SetFeatureMethod(USE_COLOR);
-            mDict.SetRadius();
+            mDict.SetRadius(RADIUS_COLOR);
         }
         Mat GetHue(const Mat& img)
         {
