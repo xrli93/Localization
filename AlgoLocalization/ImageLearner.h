@@ -137,22 +137,32 @@ namespace Localization
                 for (size_t i = 0; i < wordList.size(); i++)
                 {
                     float lOrientation = wordList[i]->GetOrientation(landmark);
+                    //cout << lOrientation << endl;
                     if (lOrientation != NO_ORIENTATION) // or numerical_limits::min()
                     {
                         orientations.push_back(lOrientation);
                     }
                 }
             }
+            //for (auto& x : orientations)
+            //{
+            //    cout << x;
+            //}
+            //cout << endl;
             //return Angles::CircularMean(orientations);
             if (USE_CIRCULAR)
             {
                 float stdDev = Angles::CircularStdDev(orientations);
-                cout << "Std dev: " << stdDev << ", Angle: ";
+                // DEBUG
+                if (stdDev > THRESHOLD_CIRCULAR_SECOND)
+                {
+                    //cout << "Second level Stddev: " << stdDev << ", Angle: " << endl;
+                }
                 return (stdDev < THRESHOLD_CIRCULAR_SECOND) ? Angles::ConvertAngle180(Angles::CircularMean(orientations)) : NO_ORIENTATION;
             }
             else
             {
-                cout << "Std dev: " << StandarDeviation(orientations) << ", Angle: ";
+                cout << "Std dev: " << StandarDeviation(orientations) << ", Angle: " << endl;
                 return Angles::ConvertAngle180(Average(orientations));
             }
         }
@@ -264,7 +274,7 @@ namespace Localization
         {
 
             Mat lImg(img);
-            cvtColor(img, lImg, COLOR_BGR2GRAY);
+            //cvtColor(img, lImg, COLOR_BGR2GRAY);
             if (ENABLE_EQUALIZER)
             {
                 equalizeHist(lImg, lImg);
@@ -276,13 +286,14 @@ namespace Localization
             }
 
             //Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-            Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(15);
+            Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14);
             //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create();
             //Ptr<Feature2D> f2d = AKAZE::create(5, 0, 3, 0.002f, 6, 4, 1);
 
             //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
             //Ptr<ORB> extrait = ORB::create(150);
-            Ptr<Feature2D> extrait = xfeatures2d::DAISY::create();
+            //Ptr<Feature2D> extrait = xfeatures2d::DAISY::create(8, 2, 4, 4);
+            Ptr<xfeatures2d::DAISY> extrait = xfeatures2d::DAISY::create();
             //Ptr<Feature2D> extrait = xfeatures2d::BriefDescriptorExtractor::create();
 
             std::vector<KeyPoint> keypoints;
@@ -291,6 +302,7 @@ namespace Localization
             if (USE_FREAK)
             {
                 extrait->compute(lImg, keypoints, descriptors);
+                //extrait->compute(lImg, descriptors);
                 //f2d->compute(lImg, keypoints, descriptors);
             }
             else

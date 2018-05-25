@@ -47,22 +47,40 @@ namespace Localization
             {
                 mean += 360;
             }
+            //DEBUG
+            if (isnan(mean))
+            {
+                cout << "mean test" << mean << ", " << sumCos << ", " << sumSin << endl;
+            }
             return mean;
         }
 
         float CircularStdDev(const vector<float>& iAnglesInDegree)
         {
-            float sumSin = 0;
-            float sumCos = 0;
-            for (const float& x : iAnglesInDegree)
+            if (iAnglesInDegree.size() > 0)
             {
-                sumCos += cos(DegToRad(x));
-                sumSin += sin(DegToRad(x));
+                float sumSin = 0;
+                float sumCos = 0;
+                for (const float& x : iAnglesInDegree)
+                {
+                    sumCos += cos(DegToRad(x));
+                    sumSin += sin(DegToRad(x));
+                }
+                sumCos /= iAnglesInDegree.size();
+                sumSin /= iAnglesInDegree.size();
+                float radius = sumSin * sumSin + sumCos * sumCos;
+                float stdDev = (abs(radius - 1.0f) < 0.001) ? 0 : sqrt(-log(sumSin * sumSin + sumCos * sumCos));
+                //DEBUG
+                if (isnan(stdDev))
+                {
+                    cout << "atan test" << stdDev << ", " << sumCos << ", " << sumSin << ", " << (sumSin * sumSin + sumCos * sumCos) << "," << -log(sumSin * sumSin + sumCos * sumCos) << endl;
+                }
+                return stdDev;
             }
-            sumCos /= iAnglesInDegree.size();
-            sumSin /= iAnglesInDegree.size();
-            float stdDev = sqrt(-log(sumSin * sumSin + sumCos * sumCos));
-            return stdDev;
+            else
+            {
+                return THRESHOLD_CIRCULAR_SECOND + 1; // No angles to use
+            }
         }
 
 
@@ -209,7 +227,7 @@ namespace Localization
             }
         }
 
-        map<int, vector<T>> GetSeenFeatures()  
+        map<int, vector<T>> GetSeenFeatures()
         {
             return mSeenFeatures;
         }
@@ -221,12 +239,24 @@ namespace Localization
             if (lIter != mOrientation.end())
             {
                 vector<float> orientations = lIter->second;
+                if (DISP_DEBUG_ORIENTATION)
+                {
+                    for (auto& x : orientations)
+                    {
+                        cout << x;
+                    }
+                    cout << endl;
+                }
                 //if standard deviation too large, neglect word
                 if (USE_CIRCULAR)
                 {
-                    if (orientations.size() > 0 && Angles::CircularStdDev(orientations) < THRESHOLD_CIRCULAR)
+                    if (orientations.size() > 0 && Angles::CircularStdDev(orientations) < THRESHOLD_CIRCULAR_FIRST)
                     {
                         return Angles::CircularMean(orientations);
+                    }
+                    else
+                    {
+                        //cout << "word stddev" << Angles::CircularStdDev(orientations) << endl;
                     }
                 }
                 else
@@ -374,7 +404,7 @@ namespace Localization
             {
                 cout << dist << endl;
             }
-            
+
             return dist;
         }
         else if (x.cols == DIM_COLOR_HIST)

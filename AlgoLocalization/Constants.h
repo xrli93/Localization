@@ -46,10 +46,12 @@ float RADIUS_SIFT = 3;
 #define USE_SYMMETRY true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
+int THRESHOLD_AGAST = 12;
 
 // ------------ Display --------------
 #define DISP_DEBUG false
 #define DISP_IMAGE false
+#define DISP_DEBUG_ORIENTATION false
 #define DISP_INCREMENTAL false
 #define VERBOSE false
 #define READ_CEREAL false
@@ -64,8 +66,8 @@ bool DEBUG = false;
 #define N_EXPERIMENTS 1
 #define WEIGHT_COLOR 0.60 // 0.5
 #define THRESHOLD_ORIENTATION 20.0f
-#define THRESHOLD_CIRCULAR 1
-#define THRESHOLD_CIRCULAR_SECOND 1
+#define THRESHOLD_CIRCULAR_FIRST 0.8F
+#define THRESHOLD_CIRCULAR_SECOND 1.2F
 #define NO_ORIENTATION 1000.0f
 #define ANGLE_BIN_SIZE 20.0f
 #define PI 3.14159265358979323846
@@ -106,7 +108,8 @@ void initParameters()
 {
     if (USE_FREAK)
     {
-        RADIUS_SIFT = 0.07; // DAISY
+        RADIUS_SIFT = 0.06; // DAISY
+        //RADIUS_SIFT = 0.02; // DAISY mod
         //RADIUS_SIFT = 210; // AKAZE
         //RADIUS_SIFT = 180; // BRIEF
         //RADIUS_SIFT = 8;
