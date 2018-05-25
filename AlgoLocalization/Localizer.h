@@ -134,6 +134,7 @@ namespace Localization
             shared_ptr<float> quality = make_shared<float>(0.);
             int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
             int ColorVote = mColorLearner.IdentifyImage(img, quality);
+            
             double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
             if (SIFTVote > -1)
             {

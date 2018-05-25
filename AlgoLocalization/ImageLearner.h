@@ -43,14 +43,14 @@ namespace Localization
         {
             cout << maxVote << " " << secondVote << " " << lSumVote << " " << *quality << " " << endl;
         }
-        if (DEBUG)
-        {
-            for (auto& x : votes)
-            {
-                cout << x << ", ";
-            }
-            cout << endl;
-        }
+        //if (DEBUG)
+        //{
+        //    for (auto& x : votes)
+        //    {
+        //        cout << x << ", ";
+        //    }
+        //    cout << endl;
+        //}
         return (lQuality >= threshold) ? result : -1;
     }
 
@@ -109,10 +109,11 @@ namespace Localization
             // Set origin node to zero
             Mat origin = Mat(1, features.cols, CV_8UC1, Scalar(0.));
             mDict.SetRootNodeCenter(origin);
+            int nWordsFound = 0;
             for (int i = 0; i < features.rows; ++i)
             {
                 auto wordList = mDict.AddFeature(features.row(i), label);
-                //cout << wordList.size() << ", " << mConfig.GetRoomName(label) << endl;
+                nWordsFound += wordList.size();
                 if (iLandmark != -1)
                 {
                     for (size_t i = 0; i < wordList.size(); i++)
@@ -121,6 +122,10 @@ namespace Localization
                     }
                 }
             }
+            //if (DEBUG)
+            //{
+            //    cout << nWordsFound << endl;
+            //}
             int nFeatures = (int)features.rows;
             mFeatureCount += nFeatures;
             mRoomFeaturesCount[label] += nFeatures;
@@ -191,10 +196,10 @@ namespace Localization
             {
                 shared_ptr<float> quality = make_shared<float>();
             }
-            if (DEBUG)
-            {
-                cout << "Features Seen " << lNumFeatures << " and words " << lNumWords << endl;
-            }
+            //if (DEBUG)
+            //{
+            //    cout << "Features Seen " << lNumFeatures << " and words " << lNumWords << endl;
+            //}
             int result = CountVotes(votes, quality, THRESHOLD_FIRST_VOTE);
             mListFeaturesSeen.push_back(features);
             return result;
@@ -286,11 +291,14 @@ namespace Localization
             }
 
             //Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-            Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14);
+            Ptr<Feature2D> f2d = MSER::create(5);
+            //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14);
+            //Ptr<Feature2D> f2d = BRISK::create();
             //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create();
-            //Ptr<Feature2D> f2d = AKAZE::create(5, 0, 3, 0.002f, 6, 4, 1);
+            //Ptr<Feature2D> f2d = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
+            //Ptr<Feature2D> f2d = ORB::create(NUM_MAX_SIFT, 1.2, 8);
 
-            //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
+            //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create(true, true, 16);
             //Ptr<ORB> extrait = ORB::create(150);
             //Ptr<Feature2D> extrait = xfeatures2d::DAISY::create(8, 2, 4, 4);
             Ptr<xfeatures2d::DAISY> extrait = xfeatures2d::DAISY::create();
@@ -299,15 +307,22 @@ namespace Localization
             std::vector<KeyPoint> keypoints;
             Mat descriptors;
             f2d->detect(lImg, keypoints);
-            if (USE_FREAK)
+            if (keypoints.size() > 0)
             {
-                extrait->compute(lImg, keypoints, descriptors);
-                //extrait->compute(lImg, descriptors);
-                //f2d->compute(lImg, keypoints, descriptors);
+                if (USE_FREAK)
+                {
+                    extrait->compute(lImg, keypoints, descriptors);
+                    //f2d->compute(lImg, keypoints, descriptors);
+                }
+                else
+                {
+                    f2d->compute(lImg, keypoints, descriptors);
+                }
+                return descriptors;
             }
             else
             {
-                f2d->compute(lImg, keypoints, descriptors);
+                return Mat();
             }
             if (descriptors.dims < 2)
             {
@@ -318,7 +333,6 @@ namespace Localization
             //cout << descriptors.rows;
             //cout << descriptors.type();
             //cout << descriptors.size();
-            return descriptors;
         }
 
 

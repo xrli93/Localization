@@ -10,7 +10,6 @@ using namespace std;
 // FREAK 5 ~ 10 bad!
 // BRIEF 180
 float RADIUS_SIFT = 3;
-
 #define ENABLE_HISTOGRAM_NORMALIZATION true
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
@@ -20,7 +19,7 @@ float RADIUS_SIFT = 3;
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
-#define MAX_CHILD_NUM 1
+#define MAX_CHILD_NUM 3
 
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.10
@@ -104,13 +103,16 @@ string mangerTestPath;
 #define DATA_V2_VAR 3
 const int dataSet = DATA_V2_VAR;
 
+#define BINARY_NORM true
 void initParameters()
 {
     if (USE_FREAK)
     {
-        RADIUS_SIFT = 0.06; // DAISY
+        RADIUS_SIFT = 0.015; // DAISY
         //RADIUS_SIFT = 0.02; // DAISY mod
-        //RADIUS_SIFT = 210; // AKAZE
+        //RADIUS_SIFT = 30; // AKAZE
+        //RADIUS_SIFT = 30; // ORB
+        //RADIUS_SIFT = 30;
         //RADIUS_SIFT = 180; // BRIEF
         //RADIUS_SIFT = 8;
     }

@@ -273,11 +273,11 @@ namespace Localization
 
         bool ContainFeature(T feature)
         {
-            if (mRadius == RADIUS_SIFT)
+            if (mRadius == RADIUS_SIFT && DEBUG)
             {
-                //cout << Localization::CalculateDistance(feature, mCenter) << ", " << mRadius << endl;
+                //cout << Localization::CalculateDistance(mCenter, feature) << ", " << mRadius << endl;
             }
-            return (Localization::CalculateDistance(feature, mCenter) < mRadius) ? true : false;
+            return (Localization::CalculateDistance(mCenter, feature) < mRadius) ? true : false;
         }
 
         bool PresentInAll()
@@ -351,6 +351,14 @@ namespace Localization
         return dist;
     }
 
+    static float CosDistance(const cv::Mat &testFeature, const cv::Mat &trainFeature)
+    {
+        float a = trainFeature.dot(testFeature);
+        float b = trainFeature.dot(trainFeature);
+        float c = testFeature.dot(testFeature);
+        return 1 - a / sqrt(b*c);
+    }
+
     template <class T>
     float CalculateDistance(const T& x, const T& y) {}
 
@@ -380,9 +388,9 @@ namespace Localization
             Mat temp(y.size(), y.type());
             if (y.type() != x.type())
             {
-                //cout << x << endl << y << endl;
                 x.convertTo(temp, y.type());
                 diff = temp - y;
+                //cout << temp << endl << x << endl;
             }
             else
             {
@@ -392,17 +400,25 @@ namespace Localization
             //cout << diff.type() << endl;
             if (USE_FREAK)
             {
-                //dist = norm(diff, NORM_HAMMING);
-                dist = norm(diff, NORM_L2);
+                if (BINARY_NORM)
+                {
+                    //dist = norm(diff, NORM_HAMMING);
+                    dist = norm(diff, NORM_L2);
+                    if (DEBUG)
+                    {
+                        cout << dist << endl;
+                    }
+                    //dist = CosDistance(temp, y);
+                }
+                else
+                {
+                    dist = norm(diff, NORM_L2);
+                }
                 //cout << diff << endl << dist << endl << endl;
             }
             else
             {
                 dist = norm(diff, NORM_L2);
-            }
-            if (DISP_DEBUG)
-            {
-                cout << dist << endl;
             }
 
             return dist;

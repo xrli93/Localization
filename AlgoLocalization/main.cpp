@@ -330,13 +330,18 @@ public:
                 mLocalizer.AddRoom(salon);
                 mLocalizer.AddRoom(cuisine);
                 mLocalizer.AddRoom(reunion);
-                mLocalizer.AddRoom(manger);
+                //mLocalizer.AddRoom(manger);
 
                 Train(&salonImgs, salon);
-                //Train(&cuisineImgs, cuisine);
                 Train(&reunionImgs, reunion);
                 Train(&cuisineImgs, cuisine);
-                Train(&mangerImgs, manger);
+                DEBUG = false;
+                //Train(&reunionImgs, reunion);
+                //Train(&cuisineImgs, cuisine);
+                //Train(&reunionImgs, reunion);
+                //Train(&cuisineImgs, cuisine);
+                //Train(&reunionImgs, reunion);
+                //Train(&mangerImgs, manger);
                 //Train(&reunionImgs, reunion);
 
                 //ReportDict();
@@ -369,13 +374,13 @@ public:
                 ////ReportIncremental(salonTest, salon, results);
                 //DEBUG = true;
                 ReportIncremental(salonTest, salon, results);
+
                 ReportIncremental(cuisineTest, cuisine, results);
                 ReportIncremental(reunionTest, reunion, results);
-                ReportIncremental(mangerTest, manger, results);
                 //Train(&reunionImgs, reunion);
                 //ReportIncremental(reunionTest, reunion, results);
-                //Train(&cuisineImgs, cuisine);
-                //ReportIncremental(reunionTest, reunion, results);
+
+                //ReportIncremental(mangerTest, manger, results);
                 //Train(&reunionImgs, reunion);
                 //ReportIncremental(reunionTest, reunion, results);
 
@@ -481,27 +486,27 @@ int main() {
         int nRooms = 3;
         vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
         vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-        //for (size_t i = 0; i < nExperiments; ++i)
-        //{
-        //    cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-        //    Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-        //    //Tester mTester = Tester();
-        //    mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-        //}
+        for (size_t i = 0; i < nExperiments; ++i)
+        {
+            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+            //Tester mTester = Tester();
+            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+        }
 
-        //cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-        //for (size_t i = 0; i < stats.size(); ++i)
-        //{
-        //    cout << stats[i] / nExperiments << ", ";
-        //}
-        //cout << endl;
+        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+        for (size_t i = 0; i < stats.size(); ++i)
+        {
+            cout << stats[i] / nExperiments << ", ";
+        }
+        cout << endl;
     }
 
-    {
-        // Orientation
-        OrientationTester lTester;
-        lTester.Run();
-    }
+    //{
+    //    // Orientation
+    //    OrientationTester lTester;
+    //    lTester.Run();
+    //}
 
     std::cin.get();
     return 0;

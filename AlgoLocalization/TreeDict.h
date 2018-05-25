@@ -207,6 +207,7 @@ namespace Localization
             }
             else
             {
+                // DEBUG
                 shared_ptr<Word<T> > newWord = make_shared<Word<T> >(feature, indexRoom, mRadius);
                 shared_ptr<Node<T> > node = AddWordToDict(newWord);
                 if (USE_SYMMETRY)
@@ -263,7 +264,6 @@ namespace Localization
             if (node->IsLeafNode())
             {
                 vector<shared_ptr<Word<T> > > lWordsInNode = node->GetWords();
-#pragma omp parallel for
                 for (int i = 0; i < lWordsInNode.size(); ++i)
                 {
                     //shared_ptr<Word<T> > lWord = lWordsInNode[i];
@@ -272,7 +272,6 @@ namespace Localization
                     //    wordList.push_back(lWord);
                     //}
                     if (lWordsInNode[i]->ContainFeature(feature))
-#pragma omp critical
                     {
                         wordList.push_back(lWordsInNode[i]);
                     }
@@ -355,6 +354,7 @@ namespace Localization
             for (int i = 0; i < centers->rows; ++i)
             {
                 shared_ptr<Node<Mat> >  newNode = make_shared<Node<Mat> >(centers->row(i));
+                //cout << newNode->GetCenter() << endl;
                 for (int wordsIter = 0; wordsIter < lWordList.size(); ++wordsIter)
                 {
                     if (labels->at<int>(wordsIter, 0) == i)
@@ -367,8 +367,6 @@ namespace Localization
             }
             node->RemoveWords();
         }
-
-
     };
 
     template <class T>
