@@ -31,14 +31,30 @@ namespace Localization
         }
 
         // iArray of angles in degrees
-        float CircularMean(const vector<float>& iAnglesInDegree)
+        float CircularMean(const vector<float>& iAnglesInDegree, const vector<float>& iWeights = vector<float>())
         {
             float sumSin = 0;
             float sumCos = 0;
-            for (const float& x : iAnglesInDegree)
+            bool useWeights = (iWeights.size() != 0);
+            //for (const float& x : iAnglesInDegree)
+            //{
+            //    sumCos += cos(DegToRad(x));
+            //    sumSin += sin(DegToRad(x));
+            //}
+            for (size_t i = 0; i < iAnglesInDegree.size(); i++)
             {
-                sumCos += cos(DegToRad(x));
-                sumSin += sin(DegToRad(x));
+                float angle = iAnglesInDegree[i];
+                
+                if (useWeights)
+                {
+                    sumCos += cos(DegToRad(angle)) * iWeights[i];
+                    sumSin += sin(DegToRad(angle)) * iWeights[i];
+                }
+                else
+                {
+                    sumCos += cos(DegToRad(angle));
+                    sumSin += sin(DegToRad(angle));
+                }
             }
             sumCos /= iAnglesInDegree.size();
             sumSin /= iAnglesInDegree.size();
@@ -75,6 +91,7 @@ namespace Localization
                 {
                     cout << "atan test" << stdDev << ", " << sumCos << ", " << sumSin << ", " << (sumSin * sumSin + sumCos * sumCos) << "," << -log(sumSin * sumSin + sumCos * sumCos) << endl;
                 }
+                //cout << stdDev << endl;
                 return stdDev;
             }
             else
@@ -232,6 +249,19 @@ namespace Localization
             return mSeenFeatures;
         }
 
+        vector<float> AnalyseWordOrientations()
+        {
+            vector<float> lStdDevs;
+            for (auto& x : mOrientation)
+            {
+                float lStdDev = Angles::CircularStdDev(x.second);
+                if (lStdDev > 0.01)
+                {
+                    lStdDevs.push_back(lStdDev);
+                }
+            }
+            return lStdDevs;
+        }
 
         float GetOrientation(const int& iLandmark)
         {
@@ -257,6 +287,11 @@ namespace Localization
                     else
                     {
                         //cout << "word stddev" << Angles::CircularStdDev(orientations) << endl;
+                        //for (auto& x : orientations)
+                        //{
+                        //    cout << x << ", ";
+                        //}
+                        //cout << endl;
                     }
                 }
                 else
@@ -398,12 +433,13 @@ namespace Localization
             }
             float dist = 0;
             //cout << diff.type() << endl;
-            if (USE_FREAK)
+            if (USE_FREE)
             {
                 if (BINARY_NORM)
                 {
-                    //dist = norm(diff, NORM_HAMMING);
-                    dist = norm(diff, NORM_L2);
+                    dist = norm(diff, NORM_HAMMING);
+                    //dist = norm(diff, NORM_L2);
+                    //DEBUG = true;
                     if (DEBUG)
                     {
                         cout << dist << endl;

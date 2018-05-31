@@ -132,6 +132,17 @@ namespace Localization
             return (int)mWords.size();
         }
 
+        vector<float> AnalyseNodeOrientations()
+        {
+            vector<float> lStdDevs;
+            for (auto& x : mWords)
+            {
+                vector<float> lWordStdDevs = x->AnalyseWordOrientations();
+                lStdDevs.insert(lStdDevs.end(), lWordStdDevs.begin(), lWordStdDevs.end());
+            }
+            return lStdDevs;
+        }
+
         // Return a vector counting words according to their lables
         // {0, 1, 2, 0 + 1, 0 + 2, 1 + 2, 0 + 1 + 2}
         // TODO: make general

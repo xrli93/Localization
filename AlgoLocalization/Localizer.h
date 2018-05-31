@@ -26,7 +26,7 @@ namespace Localization
             archive(mSIFTLearner, mColorLearner);
         }
     public:
-        Localizer() 
+        Localizer()
         {
             mSIFTLearner = SIFTImageLearner();
             mColorLearner = ColorHistogramLearner();
@@ -51,6 +51,12 @@ namespace Localization
         vector<int> CountFeatures()
         {
             return vector<int> {mSIFTLearner.CountFeatures(), mColorLearner.CountFeatures()};
+        }
+
+        void GetAnalyseOrientations()
+        {
+            cout << "SIFT angle variation: " << Average(mSIFTLearner.AnalyseOrientations()) << endl;
+            cout << "Color angle variation: " << Average(mColorLearner.AnalyseOrientations()) << endl;
         }
 
         void RemoveCommonWords()
@@ -134,7 +140,7 @@ namespace Localization
             shared_ptr<float> quality = make_shared<float>(0.);
             int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
             int ColorVote = mColorLearner.IdentifyImage(img, quality);
-            
+
             double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
             if (SIFTVote > -1)
             {
@@ -222,9 +228,29 @@ namespace Localization
         float GetOrientationToLandmark(const Mat& img, int iLandmark)
         {
             // For the moment SIFT only, can easy add Color
-            float angle = mSIFTLearner.GetOrientationToLandmark(img, iLandmark);
-            //angle += mColorLearner.GetOrientationToLandmark(img, iLandmark);
-            return angle;
+
+            float lSIFTAngle = mSIFTLearner.GetOrientationToLandmark(img, iLandmark);
+            //float lColorAngle = mColorLearner.GetOrientationToLandmark(img, iLandmark);
+
+            //if (lSIFTAngle != NO_ORIENTATION && lColorAngle != NO_ORIENTATION)
+            //{
+            //    vector<float> lVec{ lSIFTAngle, lColorAngle };
+            //    return Angles::CircularMean(lVec);
+            //}
+            //else if (lSIFTAngle != NO_ORIENTATION)
+            //{
+            //    return lSIFTAngle;
+            //}
+            //else if (lColorAngle != NO_ORIENTATION)
+            //{
+            //    return lColorAngle;
+            //}
+            //else
+            //{
+            //    return NO_ORIENTATION;
+            //}
+
+            return lSIFTAngle;
         }
     };
 }

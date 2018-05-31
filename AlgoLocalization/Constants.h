@@ -19,7 +19,7 @@ float RADIUS_SIFT = 3;
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
-#define MAX_CHILD_NUM 3
+#define MAX_CHILD_NUM 1
 
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.10
@@ -41,14 +41,14 @@ float RADIUS_SIFT = 3;
 #define PRIORITIZE_SIFT true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
-#define USE_FREAK true
+#define USE_FREE true
 #define USE_SYMMETRY true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
 int THRESHOLD_AGAST = 12;
 
 // ------------ Display --------------
-#define DISP_DEBUG false
+#define DISP_DEBUG true
 #define DISP_IMAGE false
 #define DISP_DEBUG_ORIENTATION false
 #define DISP_INCREMENTAL false
@@ -58,15 +58,15 @@ bool DEBUG = false;
 
 // ------------ Hyperparameters ------------
 #define TEST_SIZE 30
-#define TRAIN_SIZE 50
+#define TRAIN_SIZE 30
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1
 #define N_EXPERIMENTS 1
 #define WEIGHT_COLOR 0.60 // 0.5
 #define THRESHOLD_ORIENTATION 20.0f
-#define THRESHOLD_CIRCULAR_FIRST 0.8F
-#define THRESHOLD_CIRCULAR_SECOND 1.2F
+#define THRESHOLD_CIRCULAR_FIRST 0.5f
+#define THRESHOLD_CIRCULAR_SECOND 20.0f
 #define NO_ORIENTATION 1000.0f
 #define ANGLE_BIN_SIZE 20.0f
 #define PI 3.14159265358979323846
@@ -106,12 +106,13 @@ const int dataSet = DATA_V2_VAR;
 #define BINARY_NORM true
 void initParameters()
 {
-    if (USE_FREAK)
+    if (USE_FREE) 
     {
-        RADIUS_SIFT = 0.015; // DAISY
+        //RADIUS_SIFT = 180;
+        //RADIUS_SIFT = 0.015; // DAISY
         //RADIUS_SIFT = 0.02; // DAISY mod
-        //RADIUS_SIFT = 30; // AKAZE
-        //RADIUS_SIFT = 30; // ORB
+        RADIUS_SIFT = 25; // AKAZE
+        //RADIUS_SIFT = 10; // ORB + Hamming
         //RADIUS_SIFT = 30;
         //RADIUS_SIFT = 180; // BRIEF
         //RADIUS_SIFT = 8;
@@ -203,3 +204,7 @@ Config mConfig;
 #define MANGER 3
 
 
+// Matching
+extern int MIN_MATCH = 5;
+extern float MAX_STD_DEV = 0.6f;
+extern bool SQUARES_WEIGHT = true;

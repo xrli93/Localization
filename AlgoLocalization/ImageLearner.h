@@ -214,6 +214,10 @@ namespace Localization
             }
         }
 
+        vector<float> AnalyseOrientations()
+        {
+            return mDict.AnalyseOrientations();
+        }
 
         // Follows directly a call to IdentifyImage()
         void ReducImage(int label)
@@ -289,18 +293,28 @@ namespace Localization
                 Ptr<CLAHE> clahe = createCLAHE(10, Size(8, 8));
                 clahe->apply(lImg, lImg);
             }
-
-            //Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-            Ptr<Feature2D> f2d = MSER::create(5);
-            //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14);
-            //Ptr<Feature2D> f2d = BRISK::create();
-            //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create();
-            //Ptr<Feature2D> f2d = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
+            Ptr<Feature2D> f2d;
+            //Ptr<AgastFeatureDetector> f2d;
+            if (USE_FREE)
+            {
+                //f2d = MSER::create(5); // Pas mal!
+                //f2d = AgastFeatureDetector::create(22); // moyen
+                f2d = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
+                //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+            }
+            else
+            {
+                //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+            }
+            //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14); // moyen
+            //Ptr<Feature2D> f2d = BRISK::create(); // Not good
+            //Ptr<FastFeatureDetector> f2d = FastFeatureDetector::create(); // not good it seems?
             //Ptr<Feature2D> f2d = ORB::create(NUM_MAX_SIFT, 1.2, 8);
 
-            //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create(true, true, 16);
+            //Ptr<Feature2D> extrait = xfeatures2d::FREAK::create();
             //Ptr<ORB> extrait = ORB::create(150);
-            //Ptr<Feature2D> extrait = xfeatures2d::DAISY::create(8, 2, 4, 4);
+            //Ptr<Feature2D> extrait = xfeatures2d::DAISY::create(8, 2, 3, 3);
+            //Ptr<Feature2D> extrait = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
             Ptr<xfeatures2d::DAISY> extrait = xfeatures2d::DAISY::create();
             //Ptr<Feature2D> extrait = xfeatures2d::BriefDescriptorExtractor::create();
 
@@ -309,10 +323,11 @@ namespace Localization
             f2d->detect(lImg, keypoints);
             if (keypoints.size() > 0)
             {
-                if (USE_FREAK)
+                if (USE_FREE)
                 {
-                    extrait->compute(lImg, keypoints, descriptors);
-                    //f2d->compute(lImg, keypoints, descriptors);
+                    //extrait->compute(lImg, keypoints, descriptors);
+                    //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+                    f2d->compute(lImg, keypoints, descriptors);
                 }
                 else
                 {

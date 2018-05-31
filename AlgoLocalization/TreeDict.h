@@ -133,6 +133,31 @@ namespace Localization
                 return node->AnalyseWords();
             }
         }
+        vector<float> AnalyseOrientations()
+        {
+            return AnalyseOrientations(mRootNode);
+        }
+
+        vector<float> AnalyseOrientations(shared_ptr<Node<T> > node)
+        {
+            //static vector<float> lStdDevs;
+            if (!node->IsLeafNode())
+            {
+                vector<float> lStdDevs;
+                vector<shared_ptr<Node<T> > > childList = node->GetChildNodes();
+                for (size_t i = 0; i < childList.size(); ++i)
+                {
+                    shared_ptr<Node<T> > lNode = childList[i];
+                    vector<float> lNodeStdDevs = lNode->AnalyseNodeOrientations();
+                    lStdDevs.insert(lStdDevs.end(), lNodeStdDevs.begin(), lNodeStdDevs.end());
+                }
+                return lStdDevs;
+            }
+            else
+            {
+                return node->AnalyseNodeOrientations();
+            }
+        }
 
 
 
@@ -279,8 +304,10 @@ namespace Localization
             }
             else
             {
+                fullSearch = true;
                 if (!fullSearch) // SIFT
                 {
+                    cout << "No enter!" << endl;
                     //vector<float> frontierDistances;
                     CalculateFrontierDistances(node, feature);
                     node->SortChildNodes();

@@ -333,8 +333,10 @@ public:
                 //mLocalizer.AddRoom(manger);
 
                 Train(&salonImgs, salon);
-                Train(&reunionImgs, reunion);
+                //Train(&salonImgs, salon);
                 Train(&cuisineImgs, cuisine);
+                //Train(&salonImgs, salon);
+                //Train(&reunionImgs, reunion);
                 DEBUG = false;
                 //Train(&reunionImgs, reunion);
                 //Train(&cuisineImgs, cuisine);
@@ -369,14 +371,15 @@ public:
                 string salon = "Salon";
                 string cuisine = "Cuisine";
                 string reunion = "Reunion";
-                string manger = "Manger";
+                //string manger = "Manger";
                 //mLocalizer.RemoveRoom(salon);
                 ////ReportIncremental(salonTest, salon, results);
                 //DEBUG = true;
                 ReportIncremental(salonTest, salon, results);
 
                 ReportIncremental(cuisineTest, cuisine, results);
-                ReportIncremental(reunionTest, reunion, results);
+                Train(&salonImgs, salon);
+                ReportIncremental(salonTest, salon, results);
                 //Train(&reunionImgs, reunion);
                 //ReportIncremental(reunionTest, reunion, results);
 
@@ -404,13 +407,21 @@ public:
 class OrientationTester
 {
 public:
-    string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
+    //string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
+    string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
     //vector<string> mRooms{ "Salon", "SalonNew"};
+    //vector<string> mRooms{ "Salon", "SalonNew", "Cuisine", "Hall" };
     vector<string> mRooms{ "Salon", "Cuisine", "Hall" };
     vector<string> mTypes{ "Train", "Test" };
     vector<string> mSets{ "1","2" };
     map<string, vector<float>> mRefs;
     const double pi = 3.1415926; // radian or ?
+    vector<Mat> mDescriptors;
+    vector<float> mAngles;
+
+    Ptr<Feature2D> f2d;
+    Ptr<Feature2D> extract;
+    BFMatcher matcher;
 
 public:
 
@@ -418,8 +429,31 @@ public:
     {
         std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
         std::cout.precision(3);
-        Test("1");
-        Test("2");
+        //Test("1");
+        //Test("2");
+
+        //f2d = MSER::create();
+        //extract = xfeatures2d::DAISY::create();
+
+        f2d = AgastFeatureDetector::create();
+        extract = xfeatures2d::FREAK::create();
+
+        //f2d = AKAZE::create();
+        //extract = f2d;
+        for (const string& room : mRooms)
+        {
+            matcher = BFMatcher(NORM_HAMMING);
+            //matcher = BFMatcher(NORM_L2);
+            cout << "Room: " << room << endl;
+            LearnImgs(room, 12, "1");
+            for (size_t i = 1; i <= 6; i++)
+            {
+                cout << "Image: " << i << endl;
+                GetOrientation(room, i, "Test", "1");
+            }
+            mDescriptors.clear();
+        }
+
     }
     int GetIndex(string room)
     {
@@ -431,10 +465,124 @@ public:
         return radian / pi * 180;
     }
 
+    void ReportDict(Localizer& mLocalizer)
+    {
+        vector<int> wordsCount = mLocalizer.CountWords();
+        vector<int> nodesCount = mLocalizer.CountNodes();
+        vector<int> featuresCount = mLocalizer.CountFeatures();
+        cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
+        cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
+        cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
+        cout << endl;
+
+        if (mConfig.GetRoomCount() == 3)
+        {
+            vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
+            vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
+            cout << "SIFT Dict analysis: " << endl;
+            for (auto i : SIFTAnalysis)
+            {
+                cout << setw(4) << i << ", ";
+            }
+            cout << endl << endl;
+
+            cout << "Color Dict analysis: " << endl;
+            for (auto i : ColorAnalysis)
+            {
+                cout << setw(4) << i << ", ";
+            }
+            cout << endl << endl;
+        }
+    }
+
+    void LearnImgs(string room, int nTrain = 12, string set = "1")
+    {
+        for (size_t i = 1; i <= nTrain; i++)
+        {
+            string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
+            Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+            std::vector<KeyPoint> keypoints;
+            Mat descriptors;
+            f2d->detect(img, keypoints);
+            extract->compute(img, keypoints, descriptors);
+            mDescriptors.push_back(descriptors);
+            mAngles.push_back((float)(i - 1) / nTrain * 360);
+        }
+    }
+
+    void GetOrientation(string room, int index, string type = "Test", string set = "1")
+    {
+        string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
+        Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+        std::vector<KeyPoint> keypoints;
+        Mat lDescriptors;
+        f2d->detect(img, keypoints);
+        extract->compute(img, keypoints, lDescriptors);
+        const float nnRatio = 0.75f;
+        vector<int> nMatchList(mDescriptors.size());
+        for (int i = 1; i <= mDescriptors.size(); ++i)
+        {
+            int nMatches = 0;
+            vector<vector<DMatch>> nnMatches;
+            matcher.knnMatch(lDescriptors, mDescriptors[i - 1], nnMatches, 2);
+            for (auto& x : nnMatches)
+            {
+                if (x[0].distance < nnRatio * x[1].distance)
+                {
+                    ++nMatches;
+                }
+            }
+            nMatchList[i - 1] = nMatches;
+        }
+        // Find two best results
+        vector<int>::iterator maxIter = max_element(nMatchList.begin(), nMatchList.end());
+        int maxMatch = *maxIter;
+        int bestIndex = distance(nMatchList.begin(), maxIter);
+        *maxIter = 0; // set max vote to zero
+        auto secondIter = max_element(nMatchList.begin(), nMatchList.end());
+        int secondMatch = *secondIter;
+        int secondIndex = distance(nMatchList.begin(), secondIter);
+        *maxIter = maxMatch; // restore
+
+        //int sumMatches = maxMatch + secondMatch;
+        //float factor1 = (maxMatch * 1.0) / sumMatches;
+        //float factor2 = (secondMatch * 1.0) / sumMatches;
+
+        int sumMatches = maxMatch * maxMatch + secondMatch * secondMatch;
+        float factor1 = (maxMatch * maxMatch * 1.0) / sumMatches;
+        float factor2 = (secondMatch * secondMatch * 1.0) / sumMatches;
+
+        //float diffAngle = Angles::CircularMean(vector<float> {mAngles[bestIndex], -1 * mAngles[secondIndex]});
+        //vector<float> lAngles{ factor1 * mAngles[bestIndex], factor2 * mAngles[secondIndex] };
+        float bestAngle = mAngles[bestIndex];
+        float secondAngle = mAngles[secondIndex];
+        float diff = bestAngle - secondAngle;
+        vector<float> lAngles{ bestAngle, secondAngle };
+        float midAngle = Angles::CircularMean(lAngles);
+        float midAngle2 = Angles::CircularMean(lAngles, vector<float> {factor1, factor2});
+        float stdDev = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle});
+        if (stdDev > MAX_STD_DEV || maxMatch < MIN_MATCH)
+        {
+            midAngle2 = NO_ORIENTATION;
+        }
+        cout << maxMatch << ", " << secondMatch << endl;
+        cout << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << "," << midAngle2 << endl;
+        //cout << "Mid: " << midAngle << ", weighted: " << midAngle2  <<  endl;
+        //cout << mAngles[bestIndex];
+
+            //if (nMatches > maxMatch)
+            //{
+            //    maxMatch = nMatches;
+            //    bestMatch = (i);
+            //}
+            ////cout << nMatches << endl;
+    }
+
     void Test(string set)
     {
         Localizer mLocalizer;
-        int nTrain = (set.compare("1") == 0) ? 6 : 12;
+        //int nTrain = (set.compare("1") == 0) ? 6 : 12;
+        int nTrain = 12;
         int nTest = 6;
         cout << "In " << set << endl;
         for (const string& room : mRooms)
@@ -447,29 +595,49 @@ public:
                 mLocalizer.LearnImage(img, room, GetIndex(room), (float)(i - 1) / nTrain * 360);
             }
 
+            mLocalizer.GetAnalyseOrientations();
+            ReportDict(mLocalizer);
+
             cout << room << " angles ";
             for (string type : mTypes)
             {
-                for (string set : mSets)
+                //for (string set : mSets)
+                //{
+                //    cout << " on " << type << " " << set << endl;
+                //    if (type.compare("Train") == 0 && set.compare("2") == 0)
+                //    {
+                //        nTest = 12;
+                //    }
+                //    else
+                //    {
+                //        nTest = 6;
+                //    }
+                //    for (size_t i = 1; i <= nTest; i++)
+                //    {
+                //        string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
+                //        Mat img = imread(filename, IMREAD_COLOR); // Read the file
+                //        //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
+                //        cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
+                //    }
+                //    cout << endl;
+                //}
+                if (type.compare("Train") == 0)
                 {
-                    cout << " on " << type << " " << set << endl;
-                    if (type.compare("Train") == 0 && set.compare("2") == 0)
-                    {
-                        nTest = 12;
-                    }
-                    else
-                    {
-                        nTest = 6;
-                    }
-                    for (size_t i = 1; i <= nTest; i++)
-                    {
-                        string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
-                        Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                        //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
-                        cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
-                    }
-                    cout << endl;
+                    nTest = 12;
                 }
+                else
+                {
+                    nTest = 6;
+                }
+
+                for (size_t i = 1; i <= nTest; i++)
+                {
+                    string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
+                    Mat img = imread(filename, IMREAD_COLOR); // Read the file
+                    //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
+                    cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
+                }
+                cout << endl;
             }
             cout << endl;
         }
@@ -481,32 +649,35 @@ public:
 int main() {
     initParameters();
 
-    {
-        int nExperiments = N_EXPERIMENTS;
-        int nRooms = 3;
-        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
-        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-        for (size_t i = 0; i < nExperiments; ++i)
-        {
-            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-            //Tester mTester = Tester();
-            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-        }
-
-        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-        for (size_t i = 0; i < stats.size(); ++i)
-        {
-            cout << stats[i] / nExperiments << ", ";
-        }
-        cout << endl;
-    }
-
     //{
-    //    // Orientation
-    //    OrientationTester lTester;
-    //    lTester.Run();
+    //    int nExperiments = N_EXPERIMENTS;
+    //    int nRooms = 3;
+    //    vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+    //    vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+    //    for (size_t i = 0; i < nExperiments; ++i)
+    //    {
+    //        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+    //        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+    //        //Tester mTester = Tester();
+    //        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+    //    }
+
+    //    cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+    //    for (size_t i = 0; i < stats.size(); ++i)
+    //    {
+    //        cout << stats[i] / nExperiments << ", ";
+    //    }
+    //    cout << endl;
     //}
+
+    {
+        //Orientation
+        OrientationTester lTester;
+        lTester.Run();
+        //cout << "THRESHOLD 1: " <<  THRESHOLD_CIRCULAR_FIRST << endl;
+        //cout << "THRESHOLD 2: " <<  THRESHOLD_CIRCULAR_SECOND << endl;
+        //cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
+    }
 
     std::cin.get();
     return 0;
