@@ -304,7 +304,7 @@ namespace Localization
             }
             else
             {
-                //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
+                f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
             }
             //Ptr<AgastFeatureDetector> f2d = AgastFeatureDetector::create(14); // moyen
             //Ptr<Feature2D> f2d = BRISK::create(); // Not good
@@ -325,9 +325,9 @@ namespace Localization
             {
                 if (USE_FREE)
                 {
-                    //extrait->compute(lImg, keypoints, descriptors);
+                    extrait->compute(lImg, keypoints, descriptors);
                     //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
-                    f2d->compute(lImg, keypoints, descriptors);
+                    //f2d->compute(lImg, keypoints, descriptors);
                 }
                 else
                 {
@@ -422,5 +422,6 @@ namespace Localization
             }
         }
     };
+
 }
 

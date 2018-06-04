@@ -11,11 +11,103 @@ using namespace Localization;
 namespace Localization
 {
 
+    class Orientation
+    {
+    private:
+        double pi = 3.1415926; // radian or ?
+        Ptr<Feature2D> f2d;
+        Ptr<Feature2D> extract;
+        BFMatcher matcher;
+
+        vector<Mat> mDescriptors;
+        vector<float> mAngles;
+
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
+        {
+            archive(mDescriptors, mAngles);
+        }
+
+    public:
+        Orientation()
+        {
+            f2d = AgastFeatureDetector::create();
+            extract = xfeatures2d::FREAK::create();
+            matcher = BFMatcher(NORM_HAMMING);
+        };
+
+        ~Orientation() {}
+
+        // Grayscale image
+        void LearnImg(const Mat& img, float iOrientation)
+        {
+            std::vector<KeyPoint> keypoints;
+            Mat descriptors;
+            f2d->detect(img, keypoints);
+            extract->compute(img, keypoints, descriptors);
+            mDescriptors.push_back(descriptors);
+            mAngles.push_back(iOrientation);
+        }
+
+        float GetOrientation(const Mat& img)
+        {
+            std::vector<KeyPoint> keypoints;
+            Mat lDescriptors;
+            f2d->detect(img, keypoints);
+            extract->compute(img, keypoints, lDescriptors);
+            const float nnRatio = 0.75f;
+            vector<int> nMatchList(mDescriptors.size());
+            for (int i = 1; i <= mDescriptors.size(); ++i)
+            {
+                int nMatches = 0;
+                vector<vector<DMatch>> nnMatches;
+                matcher.knnMatch(lDescriptors, mDescriptors[i - 1], nnMatches, 2);
+                for (auto& x : nnMatches)
+                {
+                    if (x[0].distance < nnRatio * x[1].distance)
+                    {
+                        ++nMatches;
+                    }
+                }
+                nMatchList[i - 1] = nMatches;
+            }
+
+            // Find two best results
+            vector<int>::iterator maxIter = max_element(nMatchList.begin(), nMatchList.end());
+            int maxMatch = *maxIter;
+            int bestIndex = distance(nMatchList.begin(), maxIter);
+            *maxIter = 0; // set max vote to zero
+
+            auto secondIter = max_element(nMatchList.begin(), nMatchList.end());
+            int secondMatch = *secondIter;
+            int secondIndex = distance(nMatchList.begin(), secondIter);
+            *maxIter = maxMatch; // restore
+
+            int sumMatches = maxMatch * maxMatch + secondMatch * secondMatch;
+            float factor1 = (maxMatch * maxMatch * 1.0) / sumMatches;
+            float factor2 = (secondMatch * secondMatch * 1.0) / sumMatches;
+
+            float bestAngle = mAngles[bestIndex];
+            float secondAngle = mAngles[secondIndex];
+            vector<float> lAngles{ bestAngle, secondAngle };
+
+            float midAngle = Angles::CircularMean(lAngles, vector<float> {factor1, factor2});
+            float stdDev = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle});
+            if (stdDev > MAX_STD_DEV || maxMatch < MIN_MATCH)
+            {
+                midAngle = NO_ORIENTATION;
+            }
+            return midAngle;
+        }
+    };
+
     class Localizer
     {
     private:
         SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner;
+        Orientation mOrientation;
         TopoMap mMap;
         string mLastRoomLearned;
 
@@ -23,13 +115,14 @@ namespace Localization
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mSIFTLearner, mColorLearner);
+            archive(mSIFTLearner, mColorLearner, mOrientation);
         }
     public:
         Localizer()
         {
             mSIFTLearner = SIFTImageLearner();
             mColorLearner = ColorHistogramLearner();
+            mOrientation = Orientation();
         };
 
         ~Localizer() { };
@@ -225,34 +318,24 @@ namespace Localization
             return Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
         }
 
+        void LearnOrientation(const Mat& img, float iOrientation)
+        {
+            mOrientation.LearnImg(img, iOrientation);
+        }
+
+        float GetOrientation(const Mat& img)
+        {
+            return mOrientation.GetOrientation(img);
+        }
+
         float GetOrientationToLandmark(const Mat& img, int iLandmark)
         {
             // For the moment SIFT only, can easy add Color
-
             float lSIFTAngle = mSIFTLearner.GetOrientationToLandmark(img, iLandmark);
-            //float lColorAngle = mColorLearner.GetOrientationToLandmark(img, iLandmark);
-
-            //if (lSIFTAngle != NO_ORIENTATION && lColorAngle != NO_ORIENTATION)
-            //{
-            //    vector<float> lVec{ lSIFTAngle, lColorAngle };
-            //    return Angles::CircularMean(lVec);
-            //}
-            //else if (lSIFTAngle != NO_ORIENTATION)
-            //{
-            //    return lSIFTAngle;
-            //}
-            //else if (lColorAngle != NO_ORIENTATION)
-            //{
-            //    return lColorAngle;
-            //}
-            //else
-            //{
-            //    return NO_ORIENTATION;
-            //}
-
             return lSIFTAngle;
         }
     };
+
 }
 
 

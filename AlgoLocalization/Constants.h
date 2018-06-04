@@ -41,7 +41,7 @@ float RADIUS_SIFT = 3;
 #define PRIORITIZE_SIFT true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
-#define USE_FREE true
+#define USE_FREE false
 #define USE_SYMMETRY true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
@@ -58,7 +58,7 @@ bool DEBUG = false;
 
 // ------------ Hyperparameters ------------
 #define TEST_SIZE 30
-#define TRAIN_SIZE 30
+#define TRAIN_SIZE 50
 #define N_LEARNING TRAIN_SIZE
 #define N_TEST 50
 #define N_IMGS 1

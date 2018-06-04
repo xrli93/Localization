@@ -278,6 +278,14 @@ public:
             mangerTest.push_back(imread(mangerTestPath + to_string(i) + ".jpg", IMREAD_COLOR));
         }
     }
+
+    void ReportParams()
+    {
+        cout << "RADIUS_SIFT: " << RADIUS_SIFT << endl;
+        cout << "FREE" << USE_FREE << endl;
+        cout << "SYM" << USE_SYMMETRY << endl;
+    }
+
     void Run(vector<float>* results, bool enableCorrection, vector<float>* secondResults)
     {
         stringstream ss;
@@ -332,11 +340,11 @@ public:
                 mLocalizer.AddRoom(reunion);
                 //mLocalizer.AddRoom(manger);
 
-                Train(&salonImgs, salon);
+                //Train(&salonImgs, salon);
+                //Train(&salonImgs, salon);
                 //Train(&salonImgs, salon);
                 Train(&cuisineImgs, cuisine);
-                //Train(&salonImgs, salon);
-                //Train(&reunionImgs, reunion);
+                Train(&reunionImgs, reunion);
                 DEBUG = false;
                 //Train(&reunionImgs, reunion);
                 //Train(&cuisineImgs, cuisine);
@@ -375,13 +383,13 @@ public:
                 //mLocalizer.RemoveRoom(salon);
                 ////ReportIncremental(salonTest, salon, results);
                 //DEBUG = true;
-                ReportIncremental(salonTest, salon, results);
+                //ReportIncremental(salonTest, salon, results);
 
                 ReportIncremental(cuisineTest, cuisine, results);
-                Train(&salonImgs, salon);
-                ReportIncremental(salonTest, salon, results);
+                //Train(&salonImgs, salon);
+                //ReportIncremental(salonTest, salon, results);
                 //Train(&reunionImgs, reunion);
-                //ReportIncremental(reunionTest, reunion, results);
+                ReportIncremental(reunionTest, reunion, results);
 
                 //ReportIncremental(mangerTest, manger, results);
                 //Train(&reunionImgs, reunion);
@@ -409,6 +417,7 @@ class OrientationTester
 public:
     //string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
     string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
+    string root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
     //vector<string> mRooms{ "Salon", "SalonNew"};
     //vector<string> mRooms{ "Salon", "SalonNew", "Cuisine", "Hall" };
     vector<string> mRooms{ "Salon", "Cuisine", "Hall" };
@@ -509,11 +518,21 @@ public:
             mAngles.push_back((float)(i - 1) / nTrain * 360);
         }
     }
+    Mat Resize(Mat img)
+    {
+        Mat lImg = Mat(240, 320, CV_8UC1);
+        resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
+
+        //GaussianBlur(lImg, lImg, Size(0, 0), 3);
+        //addWeighted(lImg, 1.5, lImg, -0.5, 0, lImg);
+        return lImg;
+    }
 
     void GetOrientation(string room, int index, string type = "Test", string set = "1")
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+        img = Resize(img);
         std::vector<KeyPoint> keypoints;
         Mat lDescriptors;
         f2d->detect(img, keypoints);
@@ -646,40 +665,41 @@ public:
 
 };
 
+
 int main() {
     initParameters();
 
     //{
-    //    int nExperiments = N_EXPERIMENTS;
-    //    int nRooms = 3;
-    //    vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
-    //    vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-    //    for (size_t i = 0; i < nExperiments; ++i)
-    //    {
-    //        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-    //        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-    //        //Tester mTester = Tester();
-    //        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-    //    }
+        int nExperiments = N_EXPERIMENTS;
+        int nRooms = 3;
+        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+        for (size_t i = 0; i < nExperiments; ++i)
+        {
+            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+            //Tester mTester = Tester();
+            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+        }
 
-    //    cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-    //    for (size_t i = 0; i < stats.size(); ++i)
-    //    {
-    //        cout << stats[i] / nExperiments << ", ";
-    //    }
-    //    cout << endl;
+        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+        for (size_t i = 0; i < stats.size(); ++i)
+        {
+            cout << stats[i] / nExperiments << ", ";
+        }
+        cout << endl;
     //}
 
     {
         //Orientation
-        OrientationTester lTester;
-        lTester.Run();
+        //OrientationTester lTester;
+        //lTester.Run();
         //cout << "THRESHOLD 1: " <<  THRESHOLD_CIRCULAR_FIRST << endl;
         //cout << "THRESHOLD 2: " <<  THRESHOLD_CIRCULAR_SECOND << endl;
         //cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
     }
+    cin.get();
 
-    std::cin.get();
     return 0;
 }
 
