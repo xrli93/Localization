@@ -417,7 +417,7 @@ class OrientationTester
 public:
     //string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
     string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
-    string root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
+    //string root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
     //vector<string> mRooms{ "Salon", "SalonNew"};
     //vector<string> mRooms{ "Salon", "SalonNew", "Cuisine", "Hall" };
     vector<string> mRooms{ "Salon", "Cuisine", "Hall" };
@@ -425,14 +425,45 @@ public:
     vector<string> mSets{ "1","2" };
     map<string, vector<float>> mRefs;
     const double pi = 3.1415926; // radian or ?
-    vector<Mat> mDescriptors;
-    vector<float> mAngles;
+    map<int, vector<Mat>> mDescriptors;
+    map<int, vector<float>> mAngles;
 
     Ptr<Feature2D> f2d;
     Ptr<Feature2D> extract;
     BFMatcher matcher;
 
 public:
+
+    void TestMulti(int iLandmark)
+    {
+        std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
+        std::cout.precision(3);
+
+        f2d = AgastFeatureDetector::create();
+        extract = xfeatures2d::FREAK::create();
+        matcher = BFMatcher(NORM_HAMMING);
+
+        Localizer mLocalizer;
+        vector<int> nTrains{ 12,12,6 };
+        for (const string& room : mRooms)
+        {
+            cout << "Room: " << room << endl;
+            mLocalizer.AddRoom(room);
+            for (int set = 1; set <= 3; set++)
+            {
+                LearnImgs(room, nTrains[set - 1], to_string(set), set);
+            }
+            for (size_t i = 1; i <= 9; i++)
+            {
+                for (int set = 1; set <= 3; set++)
+                {
+                    cout << "Image: " << i << " Set: " << set << endl;
+                    GetOrientation(room, i, "Test", "1", set);
+                }
+            }
+            mDescriptors.clear();
+        }
+    }
 
     void Run()
     {
@@ -504,8 +535,10 @@ public:
         }
     }
 
-    void LearnImgs(string room, int nTrain = 12, string set = "1")
+    void LearnImgs(string room, int nTrain = 12, string set = "1", int iLandmark = 1)
     {
+        vector<Mat> lDescriptors;
+        vector<float> lAngles;
         for (size_t i = 1; i <= nTrain; i++)
         {
             string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
@@ -514,8 +547,20 @@ public:
             Mat descriptors;
             f2d->detect(img, keypoints);
             extract->compute(img, keypoints, descriptors);
-            mDescriptors.push_back(descriptors);
-            mAngles.push_back((float)(i - 1) / nTrain * 360);
+            lDescriptors.push_back(descriptors);
+            lAngles.push_back((float)(i - 1) / nTrain * 360);
+        }
+        auto lIter = mDescriptors.find(iLandmark);
+        auto lAngleIter = mAngles.find(iLandmark);
+        if (lIter == mDescriptors.end()) // new landmark
+        {
+            mDescriptors.insert(make_pair(iLandmark, lDescriptors));
+            mAngles.insert(make_pair(iLandmark, lAngles));
+        }
+        else
+        {
+            lIter->second.insert(lIter->second.end(), lDescriptors.begin(), lDescriptors.end());
+            lAngleIter->second.insert(lAngleIter->second.end(), lAngles.begin(), lAngles.end());
         }
     }
     Mat Resize(Mat img)
@@ -528,7 +573,7 @@ public:
         return lImg;
     }
 
-    void GetOrientation(string room, int index, string type = "Test", string set = "1")
+    void GetOrientation(string room, int index, string type = "Test", string set = "1", int iLandmark = 1)
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
@@ -538,12 +583,26 @@ public:
         f2d->detect(img, keypoints);
         extract->compute(img, keypoints, lDescriptors);
         const float nnRatio = 0.75f;
-        vector<int> nMatchList(mDescriptors.size());
-        for (int i = 1; i <= mDescriptors.size(); ++i)
+        auto lIter = mDescriptors.find(iLandmark);
+        vector<Mat> lLandmarkDescriptors;
+        vector<float> lLandmarkAngles;
+        if (lIter != mDescriptors.end())
+        {
+            lLandmarkDescriptors = lIter->second;
+            lLandmarkAngles = mAngles[iLandmark];
+        }
+        else
+        {
+            cout << "Not in dictionary" << endl;
+            return;
+        }
+
+        vector<int> nMatchList(lLandmarkDescriptors.size());
+        for (int i = 1; i <= lLandmarkDescriptors.size(); ++i)
         {
             int nMatches = 0;
             vector<vector<DMatch>> nnMatches;
-            matcher.knnMatch(lDescriptors, mDescriptors[i - 1], nnMatches, 2);
+            matcher.knnMatch(lDescriptors, lLandmarkDescriptors[i - 1], nnMatches, 2);
             for (auto& x : nnMatches)
             {
                 if (x[0].distance < nnRatio * x[1].distance)
@@ -553,6 +612,7 @@ public:
             }
             nMatchList[i - 1] = nMatches;
         }
+
         // Find two best results
         vector<int>::iterator maxIter = max_element(nMatchList.begin(), nMatchList.end());
         int maxMatch = *maxIter;
@@ -573,8 +633,8 @@ public:
 
         //float diffAngle = Angles::CircularMean(vector<float> {mAngles[bestIndex], -1 * mAngles[secondIndex]});
         //vector<float> lAngles{ factor1 * mAngles[bestIndex], factor2 * mAngles[secondIndex] };
-        float bestAngle = mAngles[bestIndex];
-        float secondAngle = mAngles[secondIndex];
+        float bestAngle = lLandmarkAngles[bestIndex];
+        float secondAngle = lLandmarkAngles[secondIndex];
         float diff = bestAngle - secondAngle;
         vector<float> lAngles{ bestAngle, secondAngle };
         float midAngle = Angles::CircularMean(lAngles);
@@ -597,106 +657,40 @@ public:
             ////cout << nMatches << endl;
     }
 
-    void Test(string set)
-    {
-        Localizer mLocalizer;
-        //int nTrain = (set.compare("1") == 0) ? 6 : 12;
-        int nTrain = 12;
-        int nTest = 6;
-        cout << "In " << set << endl;
-        for (const string& room : mRooms)
-        {
-            mLocalizer.AddRoom(room);
-            for (size_t i = 1; i <= nTrain; i++)
-            {
-                string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
-                Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                mLocalizer.LearnImage(img, room, GetIndex(room), (float)(i - 1) / nTrain * 360);
-            }
-
-            mLocalizer.GetAnalyseOrientations();
-            ReportDict(mLocalizer);
-
-            cout << room << " angles ";
-            for (string type : mTypes)
-            {
-                //for (string set : mSets)
-                //{
-                //    cout << " on " << type << " " << set << endl;
-                //    if (type.compare("Train") == 0 && set.compare("2") == 0)
-                //    {
-                //        nTest = 12;
-                //    }
-                //    else
-                //    {
-                //        nTest = 6;
-                //    }
-                //    for (size_t i = 1; i <= nTest; i++)
-                //    {
-                //        string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
-                //        Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                //        //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
-                //        cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
-                //    }
-                //    cout << endl;
-                //}
-                if (type.compare("Train") == 0)
-                {
-                    nTest = 12;
-                }
-                else
-                {
-                    nTest = 6;
-                }
-
-                for (size_t i = 1; i <= nTest; i++)
-                {
-                    string filename = root + room + type + set + "/" + to_string(i) + ".jpg";
-                    Mat img = imread(filename, IMREAD_COLOR); // Read the file
-                    //cout << GetDegrees(mLocalizer.GetOrientationToLandmark(img, GetIndex(room))) << ", ";
-                    cout << mLocalizer.GetOrientationToLandmark(img, GetIndex(room)) << ", ";
-                }
-                cout << endl;
-            }
-            cout << endl;
-        }
-        cout << endl << endl;
-    }
-
 };
 
 
 int main() {
     initParameters();
 
+    ////{
+    //int nExperiments = N_EXPERIMENTS;
+    //int nRooms = 3;
+    //vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+    //vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+    //for (size_t i = 0; i < nExperiments; ++i)
     //{
-        int nExperiments = N_EXPERIMENTS;
-        int nRooms = 3;
-        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
-        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-        for (size_t i = 0; i < nExperiments; ++i)
-        {
-            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-            //Tester mTester = Tester();
-            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-        }
-
-        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-        for (size_t i = 0; i < stats.size(); ++i)
-        {
-            cout << stats[i] / nExperiments << ", ";
-        }
-        cout << endl;
+    //    cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+    //    Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+    //    //Tester mTester = Tester();
+    //    mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
     //}
+
+    //cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+    //for (size_t i = 0; i < stats.size(); ++i)
+    //{
+    //    cout << stats[i] / nExperiments << ", ";
+    //}
+    //cout << endl;
+    ////}
 
     {
         //Orientation
-        //OrientationTester lTester;
-        //lTester.Run();
-        //cout << "THRESHOLD 1: " <<  THRESHOLD_CIRCULAR_FIRST << endl;
-        //cout << "THRESHOLD 2: " <<  THRESHOLD_CIRCULAR_SECOND << endl;
-        //cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
+        OrientationTester lTester;
+        lTester.Run();
+        cout << "THRESHOLD 1: " <<  THRESHOLD_CIRCULAR_FIRST << endl;
+        cout << "THRESHOLD 2: " <<  THRESHOLD_CIRCULAR_SECOND << endl;
+        cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
     }
     cin.get();
 
