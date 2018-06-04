@@ -416,11 +416,12 @@ class OrientationTester
 {
 public:
     //string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
-    string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
-    //string root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
+    //string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
+    string root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
     //vector<string> mRooms{ "Salon", "SalonNew"};
     //vector<string> mRooms{ "Salon", "SalonNew", "Cuisine", "Hall" };
-    vector<string> mRooms{ "Salon", "Cuisine", "Hall" };
+    //vector<string> mRooms{ "Salon", "Cuisine", "Hall" };
+    vector<string> mRooms{ "Salon", "Hall" };
     vector<string> mTypes{ "Train", "Test" };
     vector<string> mSets{ "1","2" };
     map<string, vector<float>> mRefs;
@@ -434,17 +435,44 @@ public:
 
 public:
 
+    // Odometry3
+    float GetAngle(vector<float>& iAngles, vector<float>& iStdDevs, vector<int>& iNMatches)
+    {
+        vector<float> lWeights;
+        vector<float> lAngles;
+        for (size_t i = 0; i < iStdDevs.size(); i++)
+        {
+            if (iAngles[i] < NO_ORIENTATION)
+            {
+                // iStdDevs[i] = 0?
+                lWeights.push_back(iNMatches[i] / iStdDevs[i]);
+                lAngles.push_back(iAngles[i]);
+            }
+        }
+        cout << "If no filtering" << Angles::CircularMean(lAngles, lWeights) << endl;
+        if (lAngles.size() == 0 || Angles::CircularStdDev(lAngles) > MAX_STD_DEV * 5) // More tolereant
+        {
+            return NO_ORIENTATION;
+        }
+        else
+        {
+            return Angles::CircularMean(lAngles, lWeights);
+        }
+    }
+
     void TestMulti(int iLandmark)
     {
         std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
         std::cout.precision(3);
 
-        f2d = AgastFeatureDetector::create();
+        f2d = BRISK::create(15, 4);
         extract = xfeatures2d::FREAK::create();
+        //extract = f2d;
         matcher = BFMatcher(NORM_HAMMING);
 
         Localizer mLocalizer;
         vector<int> nTrains{ 12,12,6 };
+        int nSet = 3;
         for (const string& room : mRooms)
         {
             cout << "Room: " << room << endl;
@@ -455,13 +483,20 @@ public:
             }
             for (size_t i = 1; i <= 9; i++)
             {
-                for (int set = 1; set <= 3; set++)
+                vector<int> nMatches(nSet, 0);
+                vector<float> nStdDevs(nSet, 0);
+                vector<float> lAngles(nSet, 0);
+                for (int set = 1; set <= nSet; set++)
                 {
                     cout << "Image: " << i << " Set: " << set << endl;
-                    GetOrientation(room, i, "Test", "1", set);
+                    lAngles[set - 1] = GetOrientation(room, i, "Test", "1", set, &(nStdDevs[set - 1]), &(nMatches[set - 1]), true);
                 }
+                cout << "The Result of GetAngle is: " << GetAngle(lAngles, nStdDevs, nMatches) << endl;
+                cout << endl;
             }
+            cout << endl;
             mDescriptors.clear();
+            mAngles.clear();
         }
     }
 
@@ -486,12 +521,16 @@ public:
             //matcher = BFMatcher(NORM_L2);
             cout << "Room: " << room << endl;
             LearnImgs(room, 12, "1");
-            for (size_t i = 1; i <= 6; i++)
+            LearnImgs(room, 12, "2");
+            LearnImgs(room, 6, "3");
+            for (size_t i = 1; i <= 9; i++)
             {
                 cout << "Image: " << i << endl;
-                GetOrientation(room, i, "Test", "1");
+                cout << "Angle: " << GetOrientation(room, i, "Test", "1") << endl;
             }
             mDescriptors.clear();
+            mAngles.clear();
+            cout << endl;
         }
 
     }
@@ -573,7 +612,8 @@ public:
         return lImg;
     }
 
-    void GetOrientation(string room, int index, string type = "Test", string set = "1", int iLandmark = 1)
+    float GetOrientation(string room, int index, string type = "Test", string set = "1", int iLandmark = 1,
+        float* pStdDev = NULL, int* pNMatches = NULL, bool verbose = false)
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
@@ -594,7 +634,7 @@ public:
         else
         {
             cout << "Not in dictionary" << endl;
-            return;
+            return NO_ORIENTATION;
         }
 
         vector<int> nMatchList(lLandmarkDescriptors.size());
@@ -602,15 +642,23 @@ public:
         {
             int nMatches = 0;
             vector<vector<DMatch>> nnMatches;
-            matcher.knnMatch(lDescriptors, lLandmarkDescriptors[i - 1], nnMatches, 2);
-            for (auto& x : nnMatches)
+            Mat refDescriptor = lLandmarkDescriptors[i - 1];
+            if (refDescriptor.cols != 0)
             {
-                if (x[0].distance < nnRatio * x[1].distance)
+                matcher.knnMatch(lDescriptors, refDescriptor, nnMatches, 2);
+                for (auto& x : nnMatches)
                 {
-                    ++nMatches;
+                    if (x[0].distance < nnRatio * x[1].distance)
+                    {
+                        ++nMatches;
+                    }
                 }
+                nMatchList[i - 1] = nMatches;
             }
-            nMatchList[i - 1] = nMatches;
+            else
+            {
+                nMatchList[i - 1] = 0;
+            }
         }
 
         // Find two best results
@@ -622,6 +670,14 @@ public:
         int secondMatch = *secondIter;
         int secondIndex = distance(nMatchList.begin(), secondIter);
         *maxIter = maxMatch; // restore
+        if (maxMatch == 0)
+        {
+            if (pStdDev != NULL)
+            {
+                *pStdDev = MAX_STD_DEV * 2;
+            }
+            return NO_ORIENTATION;
+        }
 
         //int sumMatches = maxMatch + secondMatch;
         //float factor1 = (maxMatch * 1.0) / sumMatches;
@@ -644,8 +700,18 @@ public:
         {
             midAngle2 = NO_ORIENTATION;
         }
-        cout << maxMatch << ", " << secondMatch << endl;
-        cout << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << "," << midAngle2 << endl;
+        if (pStdDev != NULL)
+        {
+            *pStdDev = stdDev;
+            *pNMatches = maxMatch + secondMatch;
+        }
+        //cout << maxMatch << ", " << secondMatch <<  endl;
+        if (verbose)
+        {
+            cout << "Total matchings: " << maxMatch + secondMatch << endl;
+            cout << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << "," << midAngle2 << endl;
+        }
+        return midAngle2;
         //cout << "Mid: " << midAngle << ", weighted: " << midAngle2  <<  endl;
         //cout << mAngles[bestIndex];
 
@@ -687,13 +753,36 @@ int main() {
     {
         //Orientation
         OrientationTester lTester;
-        lTester.Run();
-        cout << "THRESHOLD 1: " <<  THRESHOLD_CIRCULAR_FIRST << endl;
-        cout << "THRESHOLD 2: " <<  THRESHOLD_CIRCULAR_SECOND << endl;
+        float timings = 0;
+        auto t1 = std::chrono::high_resolution_clock::now();
+        lTester.TestMulti(1);
+        //lTester.Run();
+        auto t2 = std::chrono::high_resolution_clock::now();
+        timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        cout << "Timing par image" << timings / 18 << endl;
+        cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
+        cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
         cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
     }
     cin.get();
 
+    //float timings = 0;
+    //size_t i = 0;
+    //string result = "";
+    //int count = 0;
+    //while (i < imgs.size())
+    //{
+    //    //cout << "Localisation start " << endl;
+    //    auto t1 = std::chrono::high_resolution_clock::now();
+    //    int trys = 0;
+    //    bool halt = false;
+    //    while (result == "" && i < imgs.size() && !halt)
+    //    {
+    //        trys++;
+    //        result = mLocalizer.IdentifyRoom(imgs[i++], &halt);
+    //    }
+    //    auto t2 = std::chrono::high_resolution_clock::now();
+    //    timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     return 0;
 }
 
