@@ -102,12 +102,114 @@ namespace Localization
         }
     };
 
+    class SimpleLocalizer
+    {
+    public:
+        Ptr<Feature2D> f2d;
+        Ptr<Feature2D> extract;
+        BFMatcher matcher;
+        map<string, vector<Mat>> mDescriptors;
+
+        friend class cereal::access;
+        template<class Archive>
+        void serialize(Archive & archive)
+        {
+            archive(mDescriptors);
+        }
+
+        SimpleLocalizer()
+        {
+            f2d = BRISK::create(15, 5);
+            extract = xfeatures2d::FREAK::create();
+            matcher = BFMatcher(NORM_HAMMING);
+        }
+
+
+        void LearnImage(const Mat& img, string room, int iLandmark = -1, float iOrientation = 0)
+        {
+            Mat lDescriptors;
+            vector<KeyPoint> lKeypoints;
+            f2d->detect(img, lKeypoints);
+            if (lKeypoints.size() != 0)
+            {
+                extract->compute(img, lKeypoints, lDescriptors);
+            }
+            auto lIter = mDescriptors.find(room);
+            if (lIter == mDescriptors.end())
+            {
+                mDescriptors.insert(make_pair(room, vector<Mat> {lDescriptors}));
+            }
+            else
+            {
+                lIter->second.push_back(lDescriptors);
+            }
+
+        }
+
+        string IdentifyRoom(const Mat& img, bool* finished, int ref = -1)
+        {
+            static int trys = 0;
+            std::vector<KeyPoint> keypoints;
+            Mat lDescriptors;
+            f2d->detect(img, keypoints);
+            extract->compute(img, keypoints, lDescriptors);
+
+            const float nnRatio = 0.75f;
+            static vector<float> lVotes(mDescriptors.size(), 0);
+            for (auto& x : mDescriptors) // Rooms
+            {
+                vector<Mat> lRoomDescriptors = x.second;
+                string lRoom = x.first;
+                for (size_t i = 0; i < lRoomDescriptors.size(); i++) // Features in room
+                {
+                    int nMatches = 0;
+                    vector<vector<DMatch>> nnMatches;
+                    Mat refDescriptor = lRoomDescriptors[i];
+                    if (refDescriptor.cols != 0)
+                    {
+                        matcher.knnMatch(lDescriptors, refDescriptor, nnMatches, 2);
+                        for (auto& y : nnMatches)
+                        {
+                            if (y[0].distance < nnRatio * y[1].distance)
+                            {
+                                ++nMatches;
+                            }
+                        }
+                        lVotes[mConfig.GetRoomIndex(lRoom)] += nMatches;
+                    }
+                    else
+                    {
+                        lVotes[mConfig.GetRoomIndex(lRoom)] += 0;
+                    }
+                }
+            }
+            for (size_t i = 0; i < lVotes.size(); i++)
+            {
+                cout << lVotes[i] << endl;
+                //cout << mConfig.GetRoomName(i) << ", " << lVotes[i] << endl;
+            }
+            cout << endl;
+            shared_ptr<float> quality = make_shared<float>(0);
+            int lResult = CountVotes(lVotes, quality, 0.1);
+            if (*quality >= THRESHOLD_SECOND_VOTE || ++trys >= NUM_MAX_IMAGES)
+            {
+                fill(lVotes.begin(), lVotes.end(), 0);
+                trys = 0;
+                *finished = true;
+                return mConfig.GetRoomName(lResult);
+            }
+            return "";
+        }
+
+    };
+
     class Localizer
     {
     private:
         SIFTImageLearner mSIFTLearner;
         ColorHistogramLearner mColorLearner;
         Orientation mOrientation;
+        SimpleLocalizer mSimpleLocalizer;
         TopoMap mMap;
         string mLastRoomLearned;
 

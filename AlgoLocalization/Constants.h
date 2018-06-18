@@ -19,7 +19,7 @@ float RADIUS_SIFT = 3;
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
-#define MAX_CHILD_NUM 1
+#define MAX_CHILD_NUM 2
 
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.10
@@ -41,7 +41,7 @@ float RADIUS_SIFT = 3;
 #define PRIORITIZE_SIFT true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
-#define USE_FREE false
+#define USE_FREE true
 #define USE_SYMMETRY true
 const int mNorm = NORM_KL;
 #define ENABLE_EQUALIZER false
@@ -52,7 +52,7 @@ int THRESHOLD_AGAST = 12;
 #define DISP_IMAGE false
 #define DISP_DEBUG_ORIENTATION false
 #define DISP_INCREMENTAL false
-#define VERBOSE false
+#define VERBOSE true
 #define READ_CEREAL false
 bool DEBUG = false;
 
@@ -103,15 +103,15 @@ string mangerTestPath;
 #define DATA_V2_VAR 3
 const int dataSet = DATA_V2_VAR;
 
-#define BINARY_NORM true
+#define BINARY_NORM false
 void initParameters()
 {
     if (USE_FREE) 
     {
         //RADIUS_SIFT = 180;
-        //RADIUS_SIFT = 0.015; // DAISY
+        RADIUS_SIFT = 0.015; // DAISY
         //RADIUS_SIFT = 0.02; // DAISY mod
-        RADIUS_SIFT = 25; // AKAZE
+        //RADIUS_SIFT = 25; // AKAZE
         //RADIUS_SIFT = 10; // ORB + Hamming
         //RADIUS_SIFT = 30;
         //RADIUS_SIFT = 180; // BRIEF

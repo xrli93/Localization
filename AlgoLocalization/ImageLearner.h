@@ -297,9 +297,9 @@ namespace Localization
             //Ptr<AgastFeatureDetector> f2d;
             if (USE_FREE)
             {
-                //f2d = MSER::create(5); // Pas mal!
+                f2d = MSER::create(5); // Pas mal!
                 //f2d = AgastFeatureDetector::create(22); // moyen
-                f2d = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
+                //f2d = AKAZE::create(5, 0, 3, 0.001f, 5, 4, 1);
                 //f2d = xfeatures2d::SIFT::create(NUM_MAX_SIFT, 4, 0.03, 10, 1.6);
             }
             else
