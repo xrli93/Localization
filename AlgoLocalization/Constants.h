@@ -5,17 +5,17 @@
 using namespace std;
 // ---------------- Dictionary parameters ----------------
 #define RADIUS 0.0
-//#define RADIUS_SIFT 180 // 
+//#define RADIUS_FREE 180 // 
 // DAISY 0.05
 // FREAK 5 ~ 10 bad!
 // BRIEF 180
-float RADIUS_SIFT = 3;
+float RADIUS_FREE = 3;
 #define ENABLE_HISTOGRAM_NORMALIZATION true
 #define RADIUS_COLOR 0.035
 //#define RADIUS_COLOR 0.025
 
-#define NUM_MAX_SIFT 180
-#define FRONTIER_SIFT 8000
+#define NUM_MAX_FREE 180
+#define FRONTIER_FREE 8000
 #define FRONTIER_COLOR 8000
 #define NUM_MAX_WORDS 500
 #define K_SPLIT 10
@@ -24,9 +24,10 @@ float RADIUS_SIFT = 3;
 // ----------------Really constant ----------------
 #define THRESHOLD_FIRST_VOTE 0.10
 #define THRESHOLD_SECOND_VOTE 0.25
+#define THRESHOLD_SECOND_VOTE_NEW 0.15
 #define DIM_COLOR_HIST 16
-#define DIM_SIFT 128
-#define USE_SIFT 1
+#define DIM_FREE 128
+#define USE_FREE 1
 #define USE_COLOR 0
 #define USE_SURF 2
 #define WORD_TYPES 7
@@ -36,9 +37,9 @@ float RADIUS_SIFT = 3;
 // ------------ Model ----------------
 #define FULL_SEARCH true
 #define ENABLE_CLAHE false
-#define ENABLE_CORRECTION false
+#define ENABLE_CORRECTION true
 #define ENABLE_INCREMENTAL false
-#define PRIORITIZE_SIFT true
+#define PRIORITIZE_FREE true
 #define NORM_KL 0
 #define NORM_DIFFUSION 1
 #define USE_FREE true
@@ -108,18 +109,18 @@ void initParameters()
 {
     if (USE_FREE) 
     {
-        //RADIUS_SIFT = 180;
-        RADIUS_SIFT = 0.015; // DAISY
-        //RADIUS_SIFT = 0.02; // DAISY mod
-        //RADIUS_SIFT = 25; // AKAZE
-        //RADIUS_SIFT = 10; // ORB + Hamming
-        //RADIUS_SIFT = 30;
-        //RADIUS_SIFT = 180; // BRIEF
-        //RADIUS_SIFT = 8;
+        //RADIUS_FREE = 180;
+        RADIUS_FREE = 0.025; // DAISY
+        //RADIUS_FREE = 0.02; // DAISY mod
+        //RADIUS_FREE = 25; // AKAZE
+        //RADIUS_FREE = 10; // ORB + Hamming
+        //RADIUS_FREE = 30;
+        //RADIUS_FREE = 180; // BRIEF
+        //RADIUS_FREE = 8;
     }
     else
     {
-        RADIUS_SIFT = 180;
+        RADIUS_FREE = 180;
     }
     if (dataSet == DATA_V2)
     {

@@ -97,17 +97,17 @@ public:
         vector<int> wordsCount = mLocalizer.CountWords();
         vector<int> nodesCount = mLocalizer.CountNodes();
         vector<int> featuresCount = mLocalizer.CountFeatures();
-        cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
-        cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
-        cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
+        cout << "Words FREE " << wordsCount[0] << " color " << wordsCount[1] << endl;
+        cout << "Nodes FREE " << nodesCount[0] << " color " << nodesCount[1] << endl;
+        cout << "Features learnt FREE " << featuresCount[0] << " color " << featuresCount[1] << endl;
         cout << endl;
 
         if (mConfig.GetRoomCount() == 3)
         {
-            vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
+            vector<int> FREEAnalysis = mLocalizer.AnalyseDict(USE_FREE);
             vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
-            cout << "SIFT Dict analysis: " << endl;
-            for (auto i : SIFTAnalysis)
+            cout << "FREE Dict analysis: " << endl;
+            for (auto i : FREEAnalysis)
             {
                 cout << setw(4) << i << ", ";
             }
@@ -125,8 +125,8 @@ public:
     void ReportIncremental(vector<Mat>& imgs, string room, vector<float>* stats, int offset = 0)
     {
 
-        //srand(time(0));
-        //random_shuffle(imgs.begin(), imgs.end());
+        srand(time(0));
+        random_shuffle(imgs.begin(), imgs.end());
         int correct = 0;
         int unIdentified = 0;
         float timings = 0;
@@ -177,83 +177,7 @@ public:
         cout << endl;
     }
 
-    void ReportResults(vector<Mat>& imgs, int label, vector<float>* stats, int offset = 0)
-    {
-        //srand(time(0));
-        //random_shuffle(imgs.begin(), imgs.end());
-        int correct = 0;
-        int unIdentified = 0;
-        //for (size_t i = nLearning; i < nLearning + nTest; ++i)
-        float timings = 0;
-        for (size_t i = 0; i < nTest; ++i)
-        {
-            vector<Mat> lImgs;
-            for (size_t j = 0; j < nImgs; j++)
-            {
-                Mat lImg = imgs[offset + i * nImgs + j];
-                lImgs.push_back(lImg);
-            }
 
-            shared_ptr<float> quality = make_shared<float>(0);
-            auto t1 = std::chrono::high_resolution_clock::now();
-            int result;
-
-            if (ENABLE_CORRECTION)
-            {
-                // modify words + delete words in all words
-                result = mLocalizer.IdentifyRoom(lImgs, quality, VERBOSE, label);
-            }
-            else
-            {
-                // no feedback, no modification  
-                // TODO: add posteriori modification
-                result = mLocalizer.IdentifyRoom(lImgs, quality, VERBOSE);
-            }
-
-            //cout << "Room detected: " << result << " For " << i;
-            if (result == label)
-            {
-                cout << ((VERBOSE) ? "**** Correct **** \n" : "");
-                //cout << "correct" << endl;
-                correct++;
-            }
-            else if (result == -1)
-            {
-                cout << ((VERBOSE) ? "**** Unidentified **** \n" : "");
-                unIdentified++;
-            }
-            else
-            {
-                cout << ((VERBOSE) ? "result is: " + to_string(result) + "\n" : "");
-                cout << ((VERBOSE) ? "**** Wrong **** \n" : "");
-                if (DISP_IMAGE)
-                {
-                    imshow(to_string(i), lImgs[0]);
-                    waitKey(0);
-                }
-            }
-
-            auto t2 = std::chrono::high_resolution_clock::now();
-            timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            //std::cout << "took "
-            //    << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            //    << " milliseconds\n" << endl;
-        }
-        if (ENABLE_CORRECTION)
-        {
-            mLocalizer.RemoveCommonWords();
-        }
-        float percentCorrect = correct * 100.0 / nTest;
-        float percentUnidentified = unIdentified * 100.0 / nTest;
-
-        cout << "***********  Average timing: " << timings / nTest << endl;
-        cout << "** ** ** **  Correct: " << percentCorrect << "%" << endl;
-        cout << "* * * * * *  Unidentified: " << percentUnidentified << "%";
-        cout << endl;
-        (*stats)[label * 2] += percentCorrect;
-        (*stats)[label * 2 + 1] += percentUnidentified;
-        (*stats).back() += timings;
-    }
 
     Mat Resize(Mat img)
     {
@@ -286,7 +210,7 @@ public:
 
     void ReportParams()
     {
-        cout << "RADIUS_SIFT: " << RADIUS_SIFT << endl;
+        cout << "RADIUS_FREE: " << RADIUS_FREE << endl;
         cout << "FREE" << USE_FREE << endl;
         cout << "SYM" << USE_SYMMETRY << endl;
     }
@@ -347,7 +271,7 @@ public:
 
                 //Train(&salonImgs, salon);
                 //Train(&salonImgs, salon);
-                Train(&salonImgs, salon);
+                //Train(&salonImgs, salon);
                 Train(&cuisineImgs, cuisine);
                 Train(&reunionImgs, reunion);
                 DEBUG = false;
@@ -388,7 +312,7 @@ public:
                 //mLocalizer.RemoveRoom(salon);
                 ////ReportIncremental(salonTest, salon, results);
                 //DEBUG = true;
-                ReportIncremental(salonTest, salon, results);
+                //ReportIncremental(salonTest, salon, results);
 
                 ReportIncremental(cuisineTest, cuisine, results);
                 //Train(&salonImgs, salon);
@@ -532,7 +456,7 @@ public:
         cout << endl;
         shared_ptr<float> quality = make_shared<float>(0);
         int lResult = CountVotes(lVotes, quality, 0.1);
-        if (*quality >= THRESHOLD_SECOND_VOTE || ++trys >= NUM_MAX_IMAGES)
+        if (*quality >= THRESHOLD_SECOND_VOTE_NEW || ++trys >= NUM_MAX_IMAGES)
         {
             fill(lVotes.begin(), lVotes.end(), 0);
             trys = 0;
@@ -542,13 +466,13 @@ public:
         return "";
     }
 
-    
+
 
     void ReportIncremental(vector<Mat>& imgs, string room, vector<float>* stats, int offset = 0)
     {
 
-        //srand(time(0));
-        //random_shuffle(imgs.begin(), imgs.end());
+        srand(time(0));
+        random_shuffle(imgs.begin(), imgs.end());
         int correct = 0;
         int unIdentified = 0;
         float timings = 0;
@@ -604,7 +528,7 @@ public:
     {
         //string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
         string root = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
-        for (size_t i = 1; i <= 12; ++i)
+        for (size_t i = 1; i <= 16; ++i)
         {
             salonImgs.push_back(imread(root + "SalonTrain1/" + to_string(i) + ".jpg", IMREAD_GRAYSCALE));
             cuisineImgs.push_back(imread(root + "CuisineTrain1/" + to_string(i) + ".jpg", IMREAD_GRAYSCALE));
@@ -618,7 +542,7 @@ public:
         //    reunionImgs.push_back(imread(root + "ReunionTrain2/" + to_string(i) + ".jpg", IMREAD_GRAYSCALE));
         //    //mangerImgs.push_back(imread(root + "manger + to_string(i) + ".jpg", IMREAD_GRAYSCALE));
         //}
-        for (size_t i = 1; i <= 6; ++i)
+        for (size_t i = 1; i <= 10; ++i)
         {
             //salonTest.push_back(imread(root + "SalonTest2/" + to_string(i) + ".jpg", IMREAD_GRAYSCALE));
             //cuisineTest.push_back(imread(root + "CuisineTest2/" + to_string(i) + ".jpg", IMREAD_COLOR));
@@ -652,7 +576,7 @@ public:
     //}
     void ReportParams()
     {
-        cout << "RADIUS_SIFT: " << RADIUS_SIFT << endl;
+        cout << "RADIUS_FREE: " << RADIUS_FREE << endl;
         cout << "FREE" << USE_FREE << endl;
         cout << "SYM" << USE_SYMMETRY << endl;
     }
@@ -776,10 +700,18 @@ public:
     const double pi = 3.1415926; // radian or degree?
     map<int, vector<Mat>> mDescriptors;
     map<int, vector<float>> mAngles;
+    map<int, vector<float>> mTotalMatches;
 
     Ptr<Feature2D> f2d;
     Ptr<Feature2D> extract;
     BFMatcher matcher;
+
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive & archive)
+    {
+        archive(mTotalMatches);
+    }
 
 public:
 
@@ -808,11 +740,14 @@ public:
         }
     }
 
-
+    // test matching results
+    // To find distances between landmarks
     void TestLocalLandmark()
     {
         mRooms = vector<string>{ "Hall" };
-        root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
+        //root = "D:/WorkSpace/03_Resources/Dataset/Odometry3/";
+        root = "D:/WorkSpace/03_Resources/Dataset/Landmarks/";
+        root = "D:/WorkSpace/03_Resources/Dataset/Landmarks2/";
         std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
         std::cout.precision(3);
 
@@ -824,41 +759,56 @@ public:
 
         Localizer mLocalizer;
         //vector<int> nTrains{ 12,12,6 };
-        vector<int> nTrains{ 12,12,12 };
-        int nSet = 3;
+        int nTrain = 6;
+        int nSet = 6;
         for (const string& room : mRooms)
         {
             cout << "Room: " << room << endl;
             mLocalizer.AddRoom(room);
-            for (int set = 1; set <= 3; set++)
+            for (int set = 1; set <= nSet; set++)
             {
-                LearnImgs(room, nTrains[set - 1], to_string(set), set);
+                LearnImgs("", nTrain, to_string(set), set);
             }
         }
 
         //vector<int> nTotalMatches(nSet * 3, 0);
         //root = "D:/WorkSpace/03_Resources/Dataset/Odometry3bis/";
-        map<int, vector<int>> nTotalMatches;
-        nTotalMatches.insert(make_pair(1, vector<int>(3, 0)));
-        nTotalMatches.insert(make_pair(2, vector<int>(3, 0)));
-        nTotalMatches.insert(make_pair(3, vector<int>(3, 0)));
-        nTotalMatches.insert(make_pair(4, vector<int>(3, 0)));
-        nTotalMatches.insert(make_pair(5, vector<int>(3, 0)));
-        nTotalMatches.insert(make_pair(6, vector<int>(3, 0)));
-        for (int imageSet = 1; imageSet <= 3; imageSet++)
+        for (size_t i = 1; i <= nSet; i++)
         {
-            for (size_t i = 1; i <= 6; i++)
+            mTotalMatches.insert(make_pair(i, vector<float>(nSet, 0)));
+        }
+        //nTotalMatches.insert(make_pair(1, vector<int>(nSet, 0)));
+        //nTotalMatches.insert(make_pair(2, vector<int>(nSet, 0)));
+        //nTotalMatches.insert(make_pair(3, vector<int>(nSet, 0)));
+        //nTotalMatches.insert(make_pair(4, vector<int>(nSet, 0)));
+        //nTotalMatches.insert(make_pair(5, vector<int>(nSet, 0)));
+        for (int imageSet = 1; imageSet <= nSet; imageSet++)
+        {
+            for (size_t i = 1; i <= nTrain; i++)
             {
                 cout << "Image: " << i << " Set: " << imageSet << endl;
-                for (size_t iLandmark = 1; iLandmark <= 3; iLandmark++)
+                for (size_t iLandmark = 1; iLandmark <= nSet; iLandmark++)
                 {
-                    nTotalMatches[imageSet][iLandmark - 1] += GetTotalMatches("Hall", i, "Train", to_string(imageSet), iLandmark);
+                    int lNMatches = GetTotalMatches("", i, "Train", to_string(imageSet), iLandmark);
+                    //cout << "matches: " << lNMatches << endl;
+                    mTotalMatches[imageSet][iLandmark - 1] += lNMatches;
                 }
+
+                ////Division by number of keypoints in the comparaison class
+                //for (size_t iLandmark = 1; iLandmark <= nSet; iLandmark++)
+                //{
+                //    int nKeypoints = 0;
+                //    for (auto& x : mDescriptors[iLandmark])
+                //    {
+                //        nKeypoints += x.rows;
+                //    }
+                //    mTotalMatches[imageSet][iLandmark - 1] /= (float)nKeypoints;
+                //}
             }
             cout << endl;
         }
         cout << endl;
-        for (auto& x : nTotalMatches)
+        for (auto& x : mTotalMatches)
         {
             for (auto& y : x.second)
             {
@@ -869,6 +819,47 @@ public:
         mDescriptors.clear();
         mAngles.clear();
     }
+
+    void GetLandmarkDistances(int nSet)
+    {
+        for (size_t imageSet = 1; imageSet <= (int)nSet / 2; imageSet++)
+        {
+            vector<float> lMatches = mTotalMatches[imageSet];
+            auto maxIter = max_element(lMatches.begin() + (int)nSet / 2, lMatches.end());
+            int maxIndex = distance(lMatches.begin(), maxIter) + 1;
+
+            *maxIter = 0;
+            auto secondLargestIter = max_element(lMatches.begin() + (int)nSet / 2, lMatches.end());
+            int secondIndex = distance(lMatches.begin(), secondLargestIter) + 1;
+            cout << "first: " << maxIndex << ", second: " << secondIndex << endl;
+        }
+        cout << endl;
+
+        for (size_t imageSet = (int)nSet / 2 + 1; imageSet <= nSet; imageSet++)
+        {
+            vector<float> lMatches = mTotalMatches[imageSet];
+            auto maxIter = max_element(lMatches.begin(), lMatches.begin() + (int)nSet / 2);
+            int maxIndex = distance(lMatches.begin(), maxIter) + 1;
+
+            *maxIter = 0;
+            auto secondLargestIter = max_element(lMatches.begin(), lMatches.begin() + (int)nSet / 2);
+            int secondIndex = distance(lMatches.begin(), secondLargestIter) + 1;
+
+            cout << "first: " << maxIndex << ", second: " << secondIndex << endl;
+        }
+        cout << endl;
+
+        cout << endl;
+        for (auto& x : mTotalMatches)
+        {
+            for (auto& y : x.second)
+            {
+                cout << y << endl;
+            }
+            cout << endl;
+        }
+    }
+
     void TestMulti(int iLandmark)
     {
         mRooms = vector<string>{ "Salon", "Hall" };
@@ -964,17 +955,17 @@ public:
         vector<int> wordsCount = mLocalizer.CountWords();
         vector<int> nodesCount = mLocalizer.CountNodes();
         vector<int> featuresCount = mLocalizer.CountFeatures();
-        cout << "Words SIFT " << wordsCount[0] << " color " << wordsCount[1] << endl;
-        cout << "Nodes SIFT " << nodesCount[0] << " color " << nodesCount[1] << endl;
-        cout << "Features learnt SIFT " << featuresCount[0] << " color " << featuresCount[1] << endl;
+        cout << "Words FREE " << wordsCount[0] << " color " << wordsCount[1] << endl;
+        cout << "Nodes FREE " << nodesCount[0] << " color " << nodesCount[1] << endl;
+        cout << "Features learnt FREE " << featuresCount[0] << " color " << featuresCount[1] << endl;
         cout << endl;
 
         if (mConfig.GetRoomCount() == 3)
         {
-            vector<int> SIFTAnalysis = mLocalizer.AnalyseDict(USE_SIFT);
+            vector<int> FREEAnalysis = mLocalizer.AnalyseDict(USE_FREE);
             vector<int> ColorAnalysis = mLocalizer.AnalyseDict(USE_COLOR);
-            cout << "SIFT Dict analysis: " << endl;
-            for (auto i : SIFTAnalysis)
+            cout << "FREE Dict analysis: " << endl;
+            for (auto i : FREEAnalysis)
             {
                 cout << setw(4) << i << ", ";
             }
@@ -996,6 +987,7 @@ public:
         for (size_t i = 1; i <= nTrain; i++)
         {
             string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
+            cout << filename;
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
             std::vector<KeyPoint> keypoints;
             Mat descriptors;
@@ -1027,11 +1019,12 @@ public:
         return lImg;
     }
 
+    // For image index in set, find the number of total matches in class K
     int GetTotalMatches(string room, int index, string type = "Test", string set = "1", int iLandmark = 1)
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-        img = Resize(img);
+        //img = Resize(img);
         std::vector<KeyPoint> keypoints;
         Mat lDescriptors;
         f2d->detect(img, keypoints);
@@ -1087,7 +1080,7 @@ public:
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-        img = Resize(img);
+        //img = Resize(img);
         std::vector<KeyPoint> keypoints;
         Mat lDescriptors;
         f2d->detect(img, keypoints);
@@ -1242,20 +1235,35 @@ int main() {
     //    cout << endl;
     //}
 
+//Orientation
     {
-        //Orientation
-        //OrientationTester lTester;
-        //float timings = 0;
-        //auto t1 = std::chrono::high_resolution_clock::now();
-        ////lTester.Run();
-        ////lTester.TestMulti(1);
+        OrientationTester lTester;
+        float timings = 0;
+        auto t1 = std::chrono::high_resolution_clock::now();
+        //lTester.Run();
+        //lTester.TestMulti(1);
+
+        string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\nMatches.bin";
+        {
+            ifstream ifs(filename, ios::binary);
+            cereal::PortableBinaryInputArchive iarchive(ifs);
+            iarchive(lTester);
+        }
+
         //lTester.TestLocalLandmark();
-        //auto t2 = std::chrono::high_resolution_clock::now();
-        //timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        //cout << "Timing par image" << timings / 18 << endl;
-        //cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
-        //cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
-        //cout << "RADIUS SIFT: " << RADIUS_SIFT << endl;
+        //{
+        //    ofstream ofs(filename, ios::binary);
+        //    cereal::PortableBinaryOutputArchive oarchive(ofs);
+        //    oarchive(lTester);
+        //}
+
+        lTester.GetLandmarkDistances(6);
+        auto t2 = std::chrono::high_resolution_clock::now();
+        timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        cout << "Timing par image" << timings / 18 << endl;
+        cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
+        cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
+        cout << "RADIUS FREE: " << RADIUS_FREE << endl;
     }
     cin.get();
 

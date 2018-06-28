@@ -56,7 +56,7 @@ namespace Localization
         }
         void SetRadius()
         {
-            mRadius = (mFeatureMethod == USE_COLOR) ? RADIUS_COLOR : RADIUS_SIFT;
+            mRadius = (mFeatureMethod == USE_COLOR) ? RADIUS_COLOR : RADIUS_FREE;
         }
 
         void SetFeatureMethod(int featureMethod)
@@ -66,7 +66,7 @@ namespace Localization
 
         string GetFeatureMethod()
         {
-            return (mFeatureMethod == USE_SIFT) ? "SIFT" : "Color";
+            return (mFeatureMethod == USE_FREE) ? "FREE" : "Color";
         }
 
         void RemoveRoom(const string& room) { RemoveRoom(mRootNode, room); }
@@ -215,7 +215,7 @@ namespace Localization
         // Add a feature to the dict
         vector<shared_ptr<Word<T>>> AddFeature(T feature, int indexRoom)
         {
-            //bool enableFullSearch = (mFeatureMethod == USE_SIFT) ? false : true;
+            //bool enableFullSearch = (mFeatureMethod == USE_FREE) ? false : true;
             //cout << feature;
             vector<shared_ptr<Word<T> > > wordList = Search(feature, FULL_SEARCH);
             if (!wordList.empty())
@@ -305,7 +305,7 @@ namespace Localization
             else
             {
                 fullSearch = true;
-                if (!fullSearch) // SIFT
+                if (!fullSearch) // FREE
                 {
                     cout << "No enter!" << endl;
                     //vector<float> frontierDistances;

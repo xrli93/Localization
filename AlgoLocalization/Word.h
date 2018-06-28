@@ -308,7 +308,7 @@ namespace Localization
 
         bool ContainFeature(T feature)
         {
-            if (mRadius == RADIUS_SIFT && DEBUG)
+            if (mRadius == RADIUS_FREE && DEBUG)
             {
                 //cout << Localization::CalculateDistance(mCenter, feature) << ", " << mRadius << endl;
             }
@@ -416,7 +416,7 @@ namespace Localization
 
     template<> float CalculateDistance(const Mat& x, const Mat& y)
     {
-        if (x.cols == DIM_SIFT || x.cols != DIM_COLOR_HIST) //  Sift features
+        if (x.cols == DIM_FREE || x.cols != DIM_COLOR_HIST) //  Sift features
         {
             //cout << compareHist(x, y, CV_COMP_KL_DIV);
             Mat diff(y.size(), y.type());

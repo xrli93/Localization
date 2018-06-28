@@ -206,7 +206,7 @@ namespace Localization
     class Localizer
     {
     private:
-        SIFTImageLearner mSIFTLearner;
+        FREEImageLearner mFREELearner;
         ColorHistogramLearner mColorLearner;
         Orientation mOrientation;
         SimpleLocalizer mSimpleLocalizer;
@@ -217,12 +217,12 @@ namespace Localization
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mSIFTLearner, mColorLearner, mOrientation);
+            archive(mFREELearner, mColorLearner, mOrientation);
         }
     public:
         Localizer()
         {
-            mSIFTLearner = SIFTImageLearner();
+            mFREELearner = FREEImageLearner();
             mColorLearner = ColorHistogramLearner();
             mOrientation = Orientation();
         };
@@ -230,45 +230,45 @@ namespace Localization
         ~Localizer() { };
         vector<int> AnalyseDict(int featureMethod)
         {
-            return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mSIFTLearner.AnalyseDict();
+            return (featureMethod == USE_COLOR) ? mColorLearner.AnalyseDict() : mFREELearner.AnalyseDict();
         }
 
         vector<int> CountWords()
         {
-            return vector<int> {mSIFTLearner.CountWords(), mColorLearner.CountWords()};
+            return vector<int> {mFREELearner.CountWords(), mColorLearner.CountWords()};
         }
 
         vector<int> CountNodes()
         {
-            return vector<int> {mSIFTLearner.CountNodes(), mColorLearner.CountNodes()};
+            return vector<int> {mFREELearner.CountNodes(), mColorLearner.CountNodes()};
         }
 
         vector<int> CountFeatures()
         {
-            return vector<int> {mSIFTLearner.CountFeatures(), mColorLearner.CountFeatures()};
+            return vector<int> {mFREELearner.CountFeatures(), mColorLearner.CountFeatures()};
         }
 
         void GetAnalyseOrientations()
         {
-            cout << "SIFT angle variation: " << Average(mSIFTLearner.AnalyseOrientations()) << endl;
+            cout << "FREE angle variation: " << Average(mFREELearner.AnalyseOrientations()) << endl;
             cout << "Color angle variation: " << Average(mColorLearner.AnalyseOrientations()) << endl;
         }
 
         void RemoveCommonWords()
         {
-            mSIFTLearner.RemoveCommonWords();
+            mFREELearner.RemoveCommonWords();
             mColorLearner.RemoveCommonWords();
         }
         void AddRoom(const string& room)
         {
             mConfig.AddRoomName(room);
-            mSIFTLearner.AddRoom();
+            mFREELearner.AddRoom();
             mColorLearner.AddRoom();
 
         }
         void RemoveRoom(const string& room)
         {
-            mSIFTLearner.RemoveRoom(room);
+            mFREELearner.RemoveRoom(room);
             mColorLearner.RemoveRoom(room);
             mConfig.RemoveRoom(room);
         }
@@ -282,7 +282,7 @@ namespace Localization
             if (img.cols == 320)
             {
                 // TODO: use color or not?
-                mSIFTLearner.LearnImage(img, label, iLandmark, iOrientation);
+                mFREELearner.LearnImage(img, label, iLandmark, iOrientation);
                 mColorLearner.LearnImage(img, label, iLandmark, iOrientation);
             }
             else
@@ -290,7 +290,7 @@ namespace Localization
                 cout << "Formatting image" << endl;
                 Mat lImg = Mat(240, 320, CV_8UC1);
                 resize(img, lImg, lImg.size(), 0, 0, INTER_LINEAR);
-                mSIFTLearner.LearnImage(lImg, label, iLandmark, iOrientation);
+                mFREELearner.LearnImage(lImg, label, iLandmark, iOrientation);
                 mColorLearner.LearnImage(lImg, label, iLandmark, iOrientation);
             }
 
@@ -314,11 +314,11 @@ namespace Localization
         // To determine if necessary to continue learning
         bool LearntEnoughFeatures()
         {
-            vector<int> featuresCountSIFT = mSIFTLearner.CountRoomFeatures();
+            vector<int> featuresCountFREE = mFREELearner.CountRoomFeatures();
             vector<int> featuresCountColor = mColorLearner.CountRoomFeatures();
-            int minCountSIFT = *min_element(featuresCountSIFT.begin(), featuresCountSIFT.end());
+            int minCountFREE = *min_element(featuresCountFREE.begin(), featuresCountFREE.end());
             int minCountColor = *min_element(featuresCountColor.begin(), featuresCountColor.end());
-            if (minCountColor < NUM_MIN_FEATURES || minCountSIFT < NUM_MIN_FEATURES)
+            if (minCountColor < NUM_MIN_FEATURES || minCountFREE < NUM_MIN_FEATURES)
             {
                 return false;
             }
@@ -333,17 +333,17 @@ namespace Localization
             static vector<float> secondVotes(mConfig.GetRoomCount(), 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
-            int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
+            int FREEVote = mFREELearner.IdentifyImage(img, quality);
             int ColorVote = mColorLearner.IdentifyImage(img, quality);
 
-            double sumFactor = (PRIORITIZE_SIFT) ? (1 + WEIGHT_COLOR) : 2;
-            if (SIFTVote > -1)
+            double sumFactor = (PRIORITIZE_FREE) ? (1 + WEIGHT_COLOR) : 2;
+            if (FREEVote > -1)
             {
                 if (VERBOSE)
                 {
-                    cout << "SIFT voting" << SIFTVote << endl;
+                    cout << "FREE voting" << FREEVote << endl;
                 }
-                secondVotes[SIFTVote] += 1;
+                secondVotes[FREEVote] += 1;
             }
             if (ColorVote > -1)
             {
@@ -351,7 +351,7 @@ namespace Localization
                 {
                     cout << "Color voting" << ColorVote << endl;
                 }
-                secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
+                secondVotes[ColorVote] += (PRIORITIZE_FREE) ? WEIGHT_COLOR : 1;
             }
             double sumSecondVotes = 0;
             for (size_t i = 0; i < secondVotes.size(); ++i)
@@ -378,20 +378,20 @@ namespace Localization
             for (size_t i = 0; i < images.size(); ++i)
             {
                 Mat img = images[i];
-                int SIFTVote = mSIFTLearner.IdentifyImage(img, quality);
+                int FREEVote = mFREELearner.IdentifyImage(img, quality);
                 int ColorVote = mColorLearner.IdentifyImage(img, quality);
 
-                if (SIFTVote > -1)
+                if (FREEVote > -1)
                 {
                     if (verbose)
                     {
-                        cout << "SIFT voting" << SIFTVote << endl;
+                        cout << "FREE voting" << FREEVote << endl;
                     }
-                    secondVotes[SIFTVote] += 1;
+                    secondVotes[FREEVote] += 1;
                 }
                 else if (verbose)
                 {
-                    cout << "SIFT not voting" << endl;
+                    cout << "FREE not voting" << endl;
                 }
 
                 if (ColorVote > -1)
@@ -400,20 +400,20 @@ namespace Localization
                     {
                         cout << "Color voting" << ColorVote << endl;
                     }
-                    // SIFT Important
-                    secondVotes[ColorVote] += (PRIORITIZE_SIFT) ? WEIGHT_COLOR : 1;
+                    // FREE Important
+                    secondVotes[ColorVote] += (PRIORITIZE_FREE) ? WEIGHT_COLOR : 1;
                 }
                 else if (verbose)
                 {
                     cout << "Color not voting" << endl;
                 }
 
-                // SIFT important
-                if (PRIORITIZE_SIFT && images.size() == 1 && ColorVote > -1 && SIFTVote > -1)
+                // FREE important
+                if (PRIORITIZE_FREE && images.size() == 1 && ColorVote > -1 && FREEVote > -1)
                 {
-                    if (ColorVote != SIFTVote)
+                    if (ColorVote != FREEVote)
                     {
-                        return SIFTVote;
+                        return FREEVote;
                     }
                 }
             }
@@ -432,9 +432,9 @@ namespace Localization
 
         float GetOrientationToLandmark(const Mat& img, int iLandmark)
         {
-            // For the moment SIFT only, can easy add Color
-            float lSIFTAngle = mSIFTLearner.GetOrientationToLandmark(img, iLandmark);
-            return lSIFTAngle;
+            // For the moment FREE only, can easy add Color
+            float lFREEAngle = mFREELearner.GetOrientationToLandmark(img, iLandmark);
+            return lFREEAngle;
         }
     };
 

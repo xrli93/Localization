@@ -18,7 +18,7 @@ namespace Localization
         T mCenter{};
         vector<shared_ptr<Node<T>>> mChildNodes;
         vector<shared_ptr<Word<T>>> mWords;
-        float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in SIFT search to use std::sort
+        float mDistFrontier = numeric_limits<float>::max(); // store frontier distances in FREE search to use std::sort
 
         friend class cereal::access;
         template<class Archive>
@@ -112,7 +112,7 @@ namespace Localization
             });
         }
 
-        // When we have distances to Voronoi frontiers, SIFT
+        // When we have distances to Voronoi frontiers, FREE
         void SortChildNodes()
         {
             std::sort(mChildNodes.begin(), mChildNodes.end(),
