@@ -207,5 +207,7 @@ Config mConfig;
 
 // Matching
 extern int MIN_MATCH = 5;
-extern float MAX_STD_DEV = 0.9f;
+extern float MAX_STD_DEV = 1.2f;
 extern bool SQUARES_WEIGHT = true;
+
+extern float TOLERANCE_ANGLE = 2.5f;

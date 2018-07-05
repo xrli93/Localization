@@ -55,13 +55,13 @@ namespace Localization
                 mWords.pop_back();
         }
 
-        vector<shared_ptr<Word<T> > > GetWords() const
+        auto GetWords() const
         {
             return mWords;
         }
         
         // TODO: One better implementation is to return iterators
-        vector<shared_ptr<Node<T> > > GetChildNodes() const
+        auto GetChildNodes() const
         {
             return mChildNodes;
         }
@@ -86,7 +86,7 @@ namespace Localization
         void RemoveCommonWords()
         {
             mWords.erase(remove_if(mWords.begin(), mWords.end(),
-                [](shared_ptr<Word<T> > pWord) {return pWord->PresentInAll(); }),
+                [](auto pWord) {return pWord->PresentInAll(); }),
                 mWords.end());
         }
 
@@ -152,8 +152,8 @@ namespace Localization
             vector<int> total(WORD_TYPES, 0);
             for (size_t i = 0; i < mWords.size(); ++i)
             {
-                shared_ptr<Word<T> > ptrWord = mWords[i];
-                vector<bool> labels = ptrWord->GetLabels();
+                auto ptrWord = mWords[i];
+                auto labels = ptrWord->GetLabels();
                 bool salon = labels[mConfig.GetRoomIndex("Salon")];
                 bool cuisine = labels[mConfig.GetRoomIndex("Cuisine")];
                 bool reunion = labels[mConfig.GetRoomIndex("Reunion")];
@@ -198,7 +198,8 @@ namespace Localization
         // distances(i) = max(distMat(i,:)).
         // distances(i) < RADIUS means feature in the cell of i
         vector<float> distances;
-        vector<shared_ptr<Node<Mat> > > nodeList = node->GetChildNodes();
+        //vector<shared_ptr<Node<Mat> > > nodeList = node->GetChildNodes();
+        auto nodeList = node->GetChildNodes();
         for (size_t i = 0; i < nbChild; ++i)
         {
             shared_ptr<Node<Mat> > lNodeI = nodeList[i];

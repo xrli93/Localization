@@ -205,7 +205,7 @@ namespace Localization
 
     class Localizer
     {
-    private:
+    public:
         FREEImageLearner mFREELearner;
         ColorHistogramLearner mColorLearner;
         Orientation mOrientation;
@@ -217,7 +217,7 @@ namespace Localization
         template<class Archive>
         void serialize(Archive & archive)
         {
-            archive(mFREELearner, mColorLearner, mOrientation);
+            archive(mFREELearner, mColorLearner, mOrientation, mMap, mLastRoomLearned);
         }
     public:
         Localizer()
@@ -420,22 +420,93 @@ namespace Localization
             return Localization::CountVotes(secondVotes, quality, THRESHOLD_SECOND_VOTE);
         }
 
-        void LearnOrientation(const Mat& img, float iOrientation)
+        // Orientation + Navigation
+        void LearnOrientation(const Mat& img, float iOrientation, string iRoom, int iLandmark = 0)
         {
-            mOrientation.LearnImg(img, iOrientation);
+            //mOrientation.LearnImg(img, iOrientation, iLandmark);
+            mMap.LearnOrientation(img, iOrientation, iRoom, iLandmark);
         }
 
-        float GetOrientation(const Mat& img)
+        float GetOrientation(const Mat& img, int iPath = -1)
         {
-            return mOrientation.GetOrientation(img);
+            //return mOrientation.GetOrientation(img);
+            return mMap.GetOrientation(img, iPath);
         }
 
-        float GetOrientationToLandmark(const Mat& img, int iLandmark)
+        // ---------------- Odometry / Paths -----------------
+
+        // Find the closest landmark in the room
+        int FindNearestLandmark(string iRoom, const Mat& img, int nImgs = 6)
         {
-            // For the moment FREE only, can easy add Color
-            float lFREEAngle = mFREELearner.GetOrientationToLandmark(img, iLandmark);
-            return lFREEAngle;
+            //return mOrientation.FindNearestLandmark(img, nImgs);
+            return mMap.FindNearestLandmark(iRoom, img, nImgs);
         }
+
+        // Find the closest landmark on the path
+        int FindNearestLandmark(int iPath, const Mat& img, int nImgs = 1)
+        {
+            return mMap.FindNearestLandmark(iPath, img, nImgs);
+        }
+
+        // Check if a step is finished
+        bool FinishedStep(int iPath, int iStep, float iOdometry)
+        {
+            return mMap.ReachedNextLandmark(iPath, iStep, iOdometry);
+        }
+
+        // Update progress in the pass (which landmarks to search)
+        void UpdatePathProgress(int iPath, int iStep)
+        {
+            mMap.UpdatePathProgress(iPath, iStep);
+        }
+
+        int GetLandmarkAtStep(int iPath, int iStep)
+        {
+            return mMap.GetLandmarkAtStep(iPath, iStep);
+        }
+
+        // Find the index of landmark in a path
+        int FindLandmarkInPath(int iPath, int iLandmark)
+        {
+            return mMap.FindLandmarkInPath(iPath, iLandmark);
+        }
+
+        // Add a landmark (already with learned images to path
+        void AddLandmarkToPath(int iPath, int iLandmark)
+        {
+            mMap.AddLandmarkToPath(iPath, iLandmark);
+        }
+
+        // Add distance and orientation information between landmarks
+        void UpdateLandmarkDistance(int iStart, int iEnd, float iDist, float iOrientation)
+        {
+            mMap.UpdateLandmark(iStart, iEnd, iDist, iOrientation);
+        }
+
+
+#pragma region Paths
+
+        // add landmark in iInRoom that leands to iDestRoom
+        void AddKeyLandmark(string iInRoom, int iLandmark, string iDestRoom)
+        {
+            mMap.AddKeyLandmark(iInRoom, iLandmark, iDestRoom);
+        }
+
+        void ConnectRoom(string iRoom1, string iRoom2)
+        {
+            return mMap.AddRoomConnection(iRoom1, iRoom2);
+        }
+
+        int FindPath(int iStart, int iEnd)
+        {
+            return mMap.FindPathBetweenLandmarks(iStart, iEnd);
+        }
+
+        int FindPathToRoom(int iStartLandmark, string iRoom)
+        {
+            return mMap.FindPathToRoom(iStartLandmark, iRoom);
+        }
+        
     };
 
 }

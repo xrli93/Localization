@@ -906,7 +906,7 @@ public:
     void Run()
     {
         root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
-        mRooms = vector<string>{ "SalonNew", "Cuisine", "Hall" };
+        mRooms = vector<string>{ "SalonNew", "Cuisine", "Hall", "Reunion" };
         std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
         std::cout.precision(3);
         //Test("1");
@@ -933,6 +933,7 @@ public:
             {
                 cout << "Image: " << i << endl;
                 cout << "Angle: " << GetOrientation(room, i, "Train", "1") << endl;
+                cout << endl;
             }
             mDescriptors.clear();
             mAngles.clear();
@@ -987,7 +988,6 @@ public:
         for (size_t i = 1; i <= nTrain; i++)
         {
             string filename = root + room + "Train" + set + "/" + to_string(i) + ".jpg";
-            cout << filename;
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
             std::vector<KeyPoint> keypoints;
             Mat descriptors;
@@ -1076,7 +1076,7 @@ public:
     }
 
     float GetOrientation(string room, int index, string type = "Test", string set = "1", int iLandmark = 1,
-        float* pStdDev = NULL, int* pNMatches = NULL, bool verbose = false)
+        float* pStdDev = NULL, int* pNMatches = NULL, bool verbose = true)
     {
         string filename = root + room + type + set + "/" + to_string(index) + ".jpg";
         Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
@@ -1143,8 +1143,8 @@ public:
         }
 
         int sumMatches = maxMatch * maxMatch + secondMatch * secondMatch;
-        float factor1 = (maxMatch * maxMatch * 1.0) / sumMatches;
-        float factor2 = (secondMatch * secondMatch * 1.0) / sumMatches;
+        float factor1 = (maxMatch * 1.0) / sumMatches;
+        float factor2 = (secondMatch * 1.0) / sumMatches; // or square
 
         //float diffAngle = Angles::CircularMean(vector<float> {mAngles[bestIndex], -1 * mAngles[secondIndex]});
         //vector<float> lAngles{ factor1 * mAngles[bestIndex], factor2 * mAngles[secondIndex] };
@@ -1155,7 +1155,8 @@ public:
         float midAngle = Angles::CircularMean(lAngles);
         float midAngle2 = Angles::CircularMean(lAngles, vector<float> {factor1, factor2});
         float stdDev = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle});
-        if (stdDev > MAX_STD_DEV || maxMatch < MIN_MATCH)
+        float stdDevNew = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle}, vector<float> {(float)maxMatch, (float)secondMatch});
+        if (stdDevNew > MAX_STD_DEV || maxMatch < MIN_MATCH)
         {
             midAngle2 = NO_ORIENTATION;
         }
@@ -1167,8 +1168,13 @@ public:
         //cout << maxMatch << ", " << secondMatch <<  endl;
         if (verbose)
         {
-            cout << "Total matchings: " << maxMatch + secondMatch << endl;
-            cout << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << "," << midAngle2 << endl;
+            cout << "Total matchings: " << maxMatch + secondMatch << ", " << maxMatch << ", " << secondMatch << endl;
+            cout << "StdDev: " << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << endl;
+            cout << "StdDev new: " << stdDevNew << endl;
+            cout << "Confidence: " << 1 / (stdDevNew + 0.001) << endl;
+            //cout << "Confidence alt: " << (maxMatch + secondMatch) * sqrt((float)(maxMatch - secondMatch) / (maxMatch + secondMatch)) / (stdDevNew + 0.001) << endl;
+            cout << "Confidence alt: " << (maxMatch + secondMatch) / (stdDevNew + 0.001) << endl;
+
         }
         //cout << "Total matchings: " << maxMatch + secondMatch << endl;
         //cout << stdDev << ", " << bestAngle << ", " << secondAngle << ", " << midAngle << "," << midAngle2 << endl;
@@ -1187,33 +1193,80 @@ public:
 
 };
 
+class TopoMapTester
+{
+
+public:
+    Localizer mLocalizer;
+    string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
+    vector<string> mRooms{ "Salon", "Hall" };
+    vector<string> mTypes{ "Train", "Test" };
+    vector<string> mSets{ "1","2" };
+
+    TopoMapTester() {};
+
+    void Run()
+    {
+        string lRoot = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
+        Mat lMat = imread(root + "SalonTrain1/" + "1" + ".jpg", IMREAD_GRAYSCALE);
+        Mat lMat2 = imread(root + "SalonTrain1/" + "2" + ".jpg", IMREAD_GRAYSCALE);
+        cout << lMat.rows << ", " << lMat.cols << endl;
+        string salon = "Salon";
+        string hall = "Hall";
+        string cuisine = "Cuisine";
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[0], 0);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[0], 1);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[0], 2);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[0], 3);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[0], 4);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[1], 5);
+        mLocalizer.LearnOrientation(lMat2, 30, mRooms[1], 6);
+        mLocalizer.AddKeyLandmark(mRooms[1], 5, mRooms[0]);
+        mLocalizer.AddKeyLandmark(mRooms[1], 6, mRooms[0]);
+        mLocalizer.UpdateLandmarkDistance(0, 1, 2, 0);
+
+        //Path lMPath = mLocalizer.mMap.mPaths[mLocalizer.FindPath(1, 0)];
+
+        //for (auto& x : lMPath.mLandmarks)
+        //{
+        //    cout << x << endl;
+        //}
+        mLocalizer.UpdateLandmarkDistance(1, 0, 2, 0);
+        mLocalizer.UpdateLandmarkDistance(0, 2, 1, 0);
+        mLocalizer.UpdateLandmarkDistance(2, 3, 1, 0);
+        mLocalizer.UpdateLandmarkDistance(3, 4, 1, 0);
+        mLocalizer.UpdateLandmarkDistance(1, 4, 3, 0);
+        mLocalizer.UpdateLandmarkDistance(4, 5, 3, 0);
+
+        //Path lPath = mLocalizer.FindPath(0, 4);
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        int lIdPath = mLocalizer.FindPathToRoom(0, mRooms[1]);
+        auto t2 = std::chrono::high_resolution_clock::now();
+        double timings = (float)std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+        cout << "Id" << lIdPath << "first timing" << timings << endl;
+
+        t1 = std::chrono::high_resolution_clock::now();
+        lIdPath = mLocalizer.FindPathToRoom(0, mRooms[1]);
+        t2 = std::chrono::high_resolution_clock::now();
+        timings = (float)std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+        cout << "Id " << lIdPath << " second timing " << timings << endl;
+
+        Path lPath = mLocalizer.mMap.mPaths[lIdPath];
+        for (auto& x : lPath.mLandmarks)
+        {
+            cout << x << endl;
+        }
+    }
+};
 
 int main() {
     initParameters();
 
+    TopoMapTester lTester = TopoMapTester();
+    lTester.Run();
+
     // New Localization tester
-    {
-        int nExperiments = N_EXPERIMENTS;
-        int nRooms = 3;
-        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
-        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-        for (size_t i = 0; i < nExperiments; ++i)
-        {
-            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-            NewTester mTester = NewTester(N_LEARNING, N_TEST, N_IMGS);
-            //Tester mTester = Tester();
-            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-        }
-
-        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-        for (size_t i = 0; i < stats.size(); ++i)
-        {
-            cout << stats[i] / nExperiments << ", ";
-        }
-        cout << endl;
-    }
-
-    // Old localization tester based on bag of words
     //{
     //    int nExperiments = N_EXPERIMENTS;
     //    int nRooms = 3;
@@ -1222,7 +1275,7 @@ int main() {
     //    for (size_t i = 0; i < nExperiments; ++i)
     //    {
     //        cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-    //        Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+    //        NewTester mTester = NewTester(N_LEARNING, N_TEST, N_IMGS);
     //        //Tester mTester = Tester();
     //        mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
     //    }
@@ -1235,20 +1288,42 @@ int main() {
     //    cout << endl;
     //}
 
+    // Old localization tester based on bag of words
+    //{
+        int nExperiments = N_EXPERIMENTS;
+        int nRooms = 3;
+        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+        for (size_t i = 0; i < nExperiments; ++i)
+        {
+            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+            //Tester mTester = Tester();
+            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
+        }
+
+        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+        for (size_t i = 0; i < stats.size(); ++i)
+        {
+            cout << stats[i] / nExperiments << ", ";
+        }
+        cout << endl;
+    //}
+
 //Orientation
     {
-        OrientationTester lTester;
-        float timings = 0;
-        auto t1 = std::chrono::high_resolution_clock::now();
+        //OrientationTester lTester;
+        //float timings = 0;
+        //auto t1 = std::chrono::high_resolution_clock::now();
         //lTester.Run();
         //lTester.TestMulti(1);
 
-        string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\nMatches.bin";
-        {
-            ifstream ifs(filename, ios::binary);
-            cereal::PortableBinaryInputArchive iarchive(ifs);
-            iarchive(lTester);
-        }
+        //string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\nMatches.bin";
+        //{
+        //    ifstream ifs(filename, ios::binary);
+        //    cereal::PortableBinaryInputArchive iarchive(ifs);
+        //    iarchive(lTester);
+        //}
 
         //lTester.TestLocalLandmark();
         //{
@@ -1256,14 +1331,15 @@ int main() {
         //    cereal::PortableBinaryOutputArchive oarchive(ofs);
         //    oarchive(lTester);
         //}
+        //lTester.Run();
 
-        lTester.GetLandmarkDistances(6);
-        auto t2 = std::chrono::high_resolution_clock::now();
-        timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        cout << "Timing par image" << timings / 18 << endl;
-        cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
-        cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
-        cout << "RADIUS FREE: " << RADIUS_FREE << endl;
+        //lTester.GetLandmarkDistances(6);
+        //auto t2 = std::chrono::high_resolution_clock::now();
+        //timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        //cout << "Timing par image" << timings / 18 << endl;
+        //cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
+        //cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
+        //cout << "RADIUS FREE: " << RADIUS_FREE << endl;
     }
     cin.get();
 

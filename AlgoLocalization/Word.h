@@ -44,7 +44,7 @@ namespace Localization
             for (size_t i = 0; i < iAnglesInDegree.size(); i++)
             {
                 float angle = iAnglesInDegree[i];
-                
+
                 if (useWeights)
                 {
                     sumCos += cos(DegToRad(angle)) * iWeights[i];
@@ -71,19 +71,44 @@ namespace Localization
             return mean;
         }
 
-        float CircularStdDev(const vector<float>& iAnglesInDegree)
+        float CircularStdDev(const vector<float>& iAnglesInDegree, const vector<float>& iWeights = vector<float>())
         {
             if (iAnglesInDegree.size() > 0)
             {
                 float sumSin = 0;
                 float sumCos = 0;
-                for (const float& x : iAnglesInDegree)
+                bool useWeights = (iWeights.size() != 0);
+                float lSumWeights = 0;
+                //for (const float& x : iAnglesInDegree)
+                for (size_t i = 0; i < iAnglesInDegree.size(); i++)
                 {
-                    sumCos += cos(DegToRad(x));
-                    sumSin += sin(DegToRad(x));
+                    float lAngle = iAnglesInDegree[i];
+                    if (useWeights)
+                    {
+                        sumCos += cos(DegToRad(lAngle)) * iWeights[i];
+                        sumSin += sin(DegToRad(lAngle)) * iWeights[i];
+                    }
+                    else
+                    {
+                        sumCos += cos(DegToRad(lAngle));
+                        sumSin += sin(DegToRad(lAngle));
+                    }
                 }
-                sumCos /= iAnglesInDegree.size();
-                sumSin /= iAnglesInDegree.size();
+                if (useWeights)
+                {
+                    float lSumWeights = 0;
+                    for (auto& x : iWeights)
+                    {
+                        lSumWeights += x;
+                    }
+                    sumCos /= lSumWeights;
+                    sumSin /= lSumWeights;
+                }
+                else
+                {
+                    sumCos /= iAnglesInDegree.size();
+                    sumSin /= iAnglesInDegree.size();
+                }
                 float radius = sumSin * sumSin + sumCos * sumCos;
                 float stdDev = (abs(radius - 1.0f) < 0.001) ? 0 : sqrt(-log(sumSin * sumSin + sumCos * sumCos));
                 //DEBUG
@@ -99,6 +124,31 @@ namespace Localization
                 return THRESHOLD_CIRCULAR_SECOND + 1; // No angles to use
             }
         }
+
+        float AverageAngles(vector<float>& iAngles, vector<float>& iStdDevs, vector<int>& iNMatches)
+        {
+            vector<float> lWeights;
+            vector<float> lAngles;
+            for (size_t i = 0; i < iStdDevs.size(); i++)
+            {
+                if (iAngles[i] < NO_ORIENTATION)
+                {
+                    // iStdDevs[i] = 0?
+                    lWeights.push_back(iNMatches[i] / sqrt(iStdDevs[i]));
+                    lAngles.push_back(iAngles[i]);
+                }
+            }
+            if (lAngles.size() == 0 || CircularStdDev(lAngles) > MAX_STD_DEV * TOLERANCE_ANGLE) // More tolereant
+            {
+                return NO_ORIENTATION;
+            }
+            else
+            {
+                return Angles::CircularMean(lAngles, lWeights);
+            }
+        }
+
+
 
 
     }
