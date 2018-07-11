@@ -330,6 +330,7 @@ namespace Localization
         // Returns empty string if need more image, or unidentified
         string IdentifyRoom(const Mat& img, bool* halt = NULL, int ref = -1)
         {
+
             static vector<float> secondVotes(mConfig.GetRoomCount(), 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
@@ -374,6 +375,8 @@ namespace Localization
         // Function for testing on databases
         int IdentifyRoom(vector<Mat> images, shared_ptr<float> quality = NULL, bool verbose = false, int ref = -1)
         {
+
+            // CLASSICAL
             vector<float> secondVotes(mConfig.GetRoomCount(), 0);
             for (size_t i = 0; i < images.size(); ++i)
             {

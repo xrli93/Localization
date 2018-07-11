@@ -139,7 +139,8 @@ namespace Localization
     public:
         TopoMap()
         {
-            f2d = BRISK::create(15, 5);
+            //f2d = BRISK::create(15, 5);
+            f2d = BRISK::create(10, 5); // Better for localization
             extract = xfeatures2d::FREAK::create();
             matcher = BFMatcher(NORM_HAMMING);
         };
@@ -157,6 +158,44 @@ namespace Localization
             Room lRoom;
             return AddRoom(roomName, lRoom);
         }
+
+        // simple test (and last test before use bag of words) // works with new parameters!
+        int IdentifyRoom(const Mat& iImg, int iNumImges = NUM_MAX_IMAGES)
+        {
+            int lNumRooms = mConfig.GetRoomCount();
+            static vector<float> lVotes(lNumRooms, 0);
+            static int trys = 0;
+            shared_ptr<float> quality = make_shared<float>(0.);
+
+            std::vector<KeyPoint> keypoints;
+            Mat lDescriptors;
+            f2d->detect(iImg, keypoints);
+            extract->compute(iImg, keypoints, lDescriptors);
+
+            // TODO: potentially can be improved
+            for (auto& x : mLandmarks)
+            {
+                auto lNumMatches = GetTotalMatches(lDescriptors, x.first);
+                cout << "Adding " << x.second.mRoom << " To " << mConfig.GetRoomIndex(x.second.mRoom) << " n matches " << lNumMatches << endl;
+                lVotes[mConfig.GetRoomIndex(x.second.mRoom)] += lNumMatches;
+            }
+            for (auto& x : lVotes)
+            {
+                cout << x << endl;
+            }
+            cout << endl;
+            //int lResult = CountVotes(lVotes, quality, 0.2);
+            //if ((*quality >= 1) || ++trys >= iNumImges)
+            if (++trys >= iNumImges)
+            {
+                trys = 0;
+                int lResult = distance(begin(lVotes), max_element(begin(lVotes), end(lVotes)));
+                fill(lVotes.begin(), lVotes.end(), 0);
+                return lResult;
+            }
+            return -2;
+        }
+
 
         // Learn image in room iRoom at landmark iIndexLandmark
         void LearnOrientation(const Mat& img, float iOrientation,
@@ -659,7 +698,7 @@ namespace Localization
         {
             auto lItStart = mLandmarks.find(iStart);
             auto lItEnd = mLandmarks.find(iEnd);
-            
+
             // check existing paths
             for (auto& path : mPaths)
             {

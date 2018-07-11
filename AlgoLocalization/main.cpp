@@ -1198,6 +1198,7 @@ class TopoMapTester
 
 public:
     Localizer mLocalizer;
+    TopoMap mMap;
     string root = "D:/WorkSpace/03_Resources/Dataset/Angle/";
     vector<string> mRooms{ "Salon", "Hall" };
     vector<string> mTypes{ "Train", "Test" };
@@ -1258,13 +1259,66 @@ public:
             cout << x << endl;
         }
     }
+
+    void TestLocalization()
+    {
+        root = "D:/WorkSpace/03_Resources/Dataset/NewLocal/";
+        mRooms = vector<string>{ "Salon", "Cuisine", "Hall" };
+        for (auto& room : mRooms)
+        {
+            mConfig.AddRoomName(room);
+            for (size_t i = 1; i <= 12; i++)
+            {
+                string filename = root + room + "Train/" + to_string(i) + ".jpg";
+                Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+                mMap.LearnOrientation(img, 0, room, mConfig.GetRoomIndex(room));
+            }
+        }
+
+        for (size_t i = 1; i <= 6; i++)
+        {
+            cout << "test nr. " << i << endl;
+            string filename = root + "Test/" + to_string(i) + ".jpg";
+            Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+            cout << "result room is " << mMap.IdentifyRoom(img, 6) << endl;
+            cout << endl;
+        }
+
+        for (size_t i = 7; i <= 11; i++)
+        {
+            cout << "test nr. " << i << endl;
+            string filename = root + "Test/" + to_string(i) + ".jpg";
+            Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+            cout << mMap.IdentifyRoom(img, 5) << endl;
+        }
+
+        for (size_t i = 12; i <= 16; i++)
+        {
+            cout << "test nr. " << i << endl;
+            string filename = root + "Test/" + to_string(i) + ".jpg";
+            Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+            cout << mMap.IdentifyRoom(img, 5) << endl;
+        }
+        for (size_t i = 17; i <= 21; i++)
+        {
+            cout << "test nr. " << i << endl;
+            string filename = root + "Test/" + to_string(i) + ".jpg";
+            Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
+            cout << mMap.IdentifyRoom(img, 5) << endl;
+        }
+
+
+
+    }
+
 };
 
 int main() {
     initParameters();
 
     TopoMapTester lTester = TopoMapTester();
-    lTester.Run();
+    lTester.TestLocalization();
+    //lTester.Run();
 
     // New Localization tester
     //{
@@ -1288,27 +1342,27 @@ int main() {
     //    cout << endl;
     //}
 
-    // Old localization tester based on bag of words
+    //// Old localization tester based on bag of words
+    ////{
+    //int nExperiments = N_EXPERIMENTS;
+    //int nRooms = 3;
+    //vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
+    //vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
+    //for (size_t i = 0; i < nExperiments; ++i)
     //{
-        int nExperiments = N_EXPERIMENTS;
-        int nRooms = 3;
-        vector<float> stats(nRooms * 2 + 1, 0); // accuracy and unidentified
-        vector<float> correctStats(nRooms * 2, 0); // accuracy and unidentified
-        for (size_t i = 0; i < nExperiments; ++i)
-        {
-            cout << "---------------- Run " << i + 1 << " -----------------" << endl;
-            Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
-            //Tester mTester = Tester();
-            mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
-        }
-
-        cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
-        for (size_t i = 0; i < stats.size(); ++i)
-        {
-            cout << stats[i] / nExperiments << ", ";
-        }
-        cout << endl;
+    //    cout << "---------------- Run " << i + 1 << " -----------------" << endl;
+    //    Tester mTester = Tester(N_LEARNING, N_TEST, N_IMGS);
+    //    //Tester mTester = Tester();
+    //    mTester.Run(&stats, ENABLE_CORRECTION, &correctStats);
     //}
+
+    //cout << "Percentage for correct and unidentified in 3 rooms: " << endl;
+    //for (size_t i = 0; i < stats.size(); ++i)
+    //{
+    //    cout << stats[i] / nExperiments << ", ";
+    //}
+    //cout << endl;
+    ////}
 
 //Orientation
     {
