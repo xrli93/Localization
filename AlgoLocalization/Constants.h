@@ -183,7 +183,7 @@ struct Config
             find(mRooms.begin(), mRooms.end(), room));
     }
 
-    const string& GetRoomName(int index)
+    string GetRoomName(int index)
     {
         if (index >= 0 && index < mRooms.size())
         {
@@ -191,7 +191,7 @@ struct Config
         }
         else
         {
-            return "";
+            return "Non-Identified";
         }
     }
 };

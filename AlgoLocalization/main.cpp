@@ -1271,8 +1271,13 @@ public:
             {
                 string filename = root + room + "Train/" + to_string(i) + ".jpg";
                 Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-                mMap.LearnOrientation(img, 0, room, mConfig.GetRoomIndex(room));
+                mMap.LearnOrientation(img, 0, room, mConfig.GetRoomIndex(room) * 7 + (int)(i) / 7);
             }
+        }
+
+        for (auto& x : mMap.mLandmarks)
+        {
+            cout << "Landmark nr: " << x.first << " in room " << x.second.mRoom << endl;
         }
 
         for (size_t i = 1; i <= 6; i++)
@@ -1280,8 +1285,9 @@ public:
             cout << "test nr. " << i << endl;
             string filename = root + "Test/" + to_string(i) + ".jpg";
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-            cout << "result room is " << mMap.IdentifyRoom(img, 6) << endl;
-            cout << endl;
+            int lRoom = -1;
+            cout << "Nearest landmark is: " << mMap.FindRoomThenLandmark(img, &lRoom, 6);
+            cout << ", in room " << mConfig.GetRoomName(lRoom) << endl;
         }
 
         for (size_t i = 7; i <= 11; i++)
@@ -1289,7 +1295,10 @@ public:
             cout << "test nr. " << i << endl;
             string filename = root + "Test/" + to_string(i) + ".jpg";
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-            cout << mMap.IdentifyRoom(img, 5) << endl;
+            //cout << mMap.IdentifyRoom(img, 5) << endl;
+            int lRoom;
+            cout << "Nearest landmark is: " << mMap.FindRoomThenLandmark(img, &lRoom, 5);
+            cout << ", in room " << mConfig.GetRoomName(lRoom) << endl;
         }
 
         for (size_t i = 12; i <= 16; i++)
@@ -1297,14 +1306,20 @@ public:
             cout << "test nr. " << i << endl;
             string filename = root + "Test/" + to_string(i) + ".jpg";
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-            cout << mMap.IdentifyRoom(img, 5) << endl;
+            //cout << mMap.IdentifyRoom(img, 5) << endl;
+            int lRoom = -1;
+            cout << "Nearest landmark is: " << mMap.FindRoomThenLandmark(img, &lRoom, 5);
+            cout << ", in room " << mConfig.GetRoomName(lRoom) << endl;
         }
         for (size_t i = 17; i <= 21; i++)
         {
             cout << "test nr. " << i << endl;
             string filename = root + "Test/" + to_string(i) + ".jpg";
             Mat img = imread(filename, IMREAD_GRAYSCALE); // Read the file
-            cout << mMap.IdentifyRoom(img, 5) << endl;
+            //cout << mMap.IdentifyRoom(img, 5) << endl;
+            int lRoom = -1;
+            cout << "Nearest landmark is: " << mMap.FindRoomThenLandmark(img, &lRoom, 5);
+            cout << ", in room " << mConfig.GetRoomName(lRoom) << endl;
         }
 
 
@@ -1365,36 +1380,36 @@ int main() {
     ////}
 
 //Orientation
-    {
-        //OrientationTester lTester;
-        //float timings = 0;
-        //auto t1 = std::chrono::high_resolution_clock::now();
-        //lTester.Run();
-        //lTester.TestMulti(1);
+    //{
+    //    OrientationTester lTester;
+    //    float timings = 0;
+    //    auto t1 = std::chrono::high_resolution_clock::now();
+    //    lTester.Run();
+    //    lTester.TestMulti(1);
+    //    string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\nMatches.bin";
 
-        //string filename = "D:\\WorkSpace\\03_Resources\\Dataset\\v2\\nMatches.bin";
-        //{
-        //    ifstream ifs(filename, ios::binary);
-        //    cereal::PortableBinaryInputArchive iarchive(ifs);
-        //    iarchive(lTester);
-        //}
+    //    //{
+    //    //    ifstream ifs(filename, ios::binary);
+    //    //    cereal::PortableBinaryInputArchive iarchive(ifs);
+    //    //    iarchive(lTester);
+    //    //}
 
-        //lTester.TestLocalLandmark();
-        //{
-        //    ofstream ofs(filename, ios::binary);
-        //    cereal::PortableBinaryOutputArchive oarchive(ofs);
-        //    oarchive(lTester);
-        //}
-        //lTester.Run();
+    //    lTester.TestLocalLandmark();
+    //    {
+    //        ofstream ofs(filename, ios::binary);
+    //        cereal::PortableBinaryOutputArchive oarchive(ofs);
+    //        oarchive(lTester);
+    //    }
+    //    lTester.Run();
 
-        //lTester.GetLandmarkDistances(6);
-        //auto t2 = std::chrono::high_resolution_clock::now();
-        //timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        //cout << "Timing par image" << timings / 18 << endl;
-        //cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
-        //cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
-        //cout << "RADIUS FREE: " << RADIUS_FREE << endl;
-    }
+    //    lTester.GetLandmarkDistances(6);
+    //    auto t2 = std::chrono::high_resolution_clock::now();
+    //    timings += (float)std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    //    cout << "Timing par image" << timings / 18 << endl;
+    //    cout << "THRESHOLD 1: " << THRESHOLD_CIRCULAR_FIRST << endl;
+    //    cout << "THRESHOLD 2: " << THRESHOLD_CIRCULAR_SECOND << endl;
+    //    cout << "RADIUS FREE: " << RADIUS_FREE << endl;
+    //}
     cin.get();
 
     //float timings = 0;

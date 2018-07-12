@@ -159,11 +159,57 @@ namespace Localization
             return AddRoom(roomName, lRoom);
         }
 
+        // Returns the landmark as well as the room index
+        int FindRoomThenLandmark(const Mat& iImg, int* oRoom, int iNumImges = 6)
+        {
+            int lNumRooms = mConfig.GetRoomCount();
+            static vector<float> lRoomVotes(lNumRooms, 0);
+            static int trys = 0;
+
+            std::vector<KeyPoint> keypoints;
+            Mat lDescriptors;
+            f2d->detect(iImg, keypoints);
+            extract->compute(iImg, keypoints, lDescriptors);
+
+            // TODO: potentially can be improved
+            for (auto& x : mLandmarks)
+            {
+                auto lNumMatches = GetTotalMatches(lDescriptors, x.first);
+                lRoomVotes[mConfig.GetRoomIndex(x.second.mRoom)] += lNumMatches;
+                auto lItLdmkMatching = mTotalMatches.find(x.first);
+                if (lItLdmkMatching != mTotalMatches.end())
+                {
+                    lItLdmkMatching->second = lNumMatches;
+                }
+            }
+            if (++trys >= iNumImges)
+            {
+                trys = 0;
+                int lRoom = distance(begin(lRoomVotes), max_element(begin(lRoomVotes), end(lRoomVotes)));
+                for (auto& x : mTotalMatches)
+                {
+                    auto lLandmarkIter = mLandmarks.find(x.first);
+                    if (mConfig.GetRoomName(lRoom).compare(lLandmarkIter->second.mRoom) != 0)
+                    {
+                        x.second = 0;
+                    }
+                }
+                auto lMaxIter = std::max_element(mTotalMatches.begin(), mTotalMatches.end(),
+                    [](const pair<int, float>& p1, const pair<int, float>& p2) {return p1.second < p2.second; });
+                int lLandmark = (*lMaxIter).first;
+                fill(lRoomVotes.begin(), lRoomVotes.end(), 0);
+                *oRoom = lRoom;
+                return lLandmark;
+            }
+            *oRoom = -1;
+            return -2;
+        }
+
         // simple test (and last test before use bag of words) // works with new parameters!
         int IdentifyRoom(const Mat& iImg, int iNumImges = NUM_MAX_IMAGES)
         {
             int lNumRooms = mConfig.GetRoomCount();
-            static vector<float> lVotes(lNumRooms, 0);
+            static vector<float> lRoomVotes(lNumRooms, 0);
             static int trys = 0;
             shared_ptr<float> quality = make_shared<float>(0.);
 
@@ -177,9 +223,9 @@ namespace Localization
             {
                 auto lNumMatches = GetTotalMatches(lDescriptors, x.first);
                 cout << "Adding " << x.second.mRoom << " To " << mConfig.GetRoomIndex(x.second.mRoom) << " n matches " << lNumMatches << endl;
-                lVotes[mConfig.GetRoomIndex(x.second.mRoom)] += lNumMatches;
+                lRoomVotes[mConfig.GetRoomIndex(x.second.mRoom)] += lNumMatches;
             }
-            for (auto& x : lVotes)
+            for (auto& x : lRoomVotes)
             {
                 cout << x << endl;
             }
@@ -189,8 +235,8 @@ namespace Localization
             if (++trys >= iNumImges)
             {
                 trys = 0;
-                int lResult = distance(begin(lVotes), max_element(begin(lVotes), end(lVotes)));
-                fill(lVotes.begin(), lVotes.end(), 0);
+                int lResult = distance(begin(lRoomVotes), max_element(begin(lRoomVotes), end(lRoomVotes)));
+                fill(lRoomVotes.begin(), lRoomVotes.end(), 0);
                 return lResult;
             }
             return -2;
