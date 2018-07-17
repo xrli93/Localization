@@ -134,6 +134,37 @@ namespace Localization
         {
             return MapNode<int>::GetDistanceTo(iLandmark);
         }
+        void UpdateAngles(const float& iOrientation)
+        {
+            int lNumImages = mDescriptors.size();
+            float lStep = 360.0 / lNumImages;
+            if (mAngles.size() == lNumImages)
+            {
+                for (size_t i = 0; i < lNumImages; i++)
+                {
+                    mAngles[i] = -iOrientation + i * lStep;
+                }
+            }
+            else
+            {
+                vector<float> lAngles(lNumImages, 0);
+                for (size_t i = 0; i < lNumImages; i++)
+                {
+                    lAngles[i] = -iOrientation + i * lStep;
+                }
+                mAngles = lAngles;
+            }
+        }
+
+        int CountFeatures()
+        {
+            int lCount = 0;
+            for (auto& x : mDescriptors)
+            {
+                lCount += x.rows;
+            }
+            return lCount;
+        }
 
     };
 

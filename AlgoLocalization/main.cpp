@@ -1225,13 +1225,6 @@ public:
         mLocalizer.AddKeyLandmark(mRooms[1], 5, mRooms[0]);
         mLocalizer.AddKeyLandmark(mRooms[1], 6, mRooms[0]);
         mLocalizer.UpdateLandmarkDistance(0, 1, 2, 0);
-
-        //Path lMPath = mLocalizer.mMap.mPaths[mLocalizer.FindPath(1, 0)];
-
-        //for (auto& x : lMPath.mLandmarks)
-        //{
-        //    cout << x << endl;
-        //}
         mLocalizer.UpdateLandmarkDistance(1, 0, 2, 0);
         mLocalizer.UpdateLandmarkDistance(0, 2, 1, 0);
         mLocalizer.UpdateLandmarkDistance(2, 3, 1, 0);
@@ -1326,13 +1319,53 @@ public:
 
     }
 
+    void TestOrienatation()
+    {
+        mLocalizer.AddRoom("Cuisine");
+        mLocalizer.AddRoom("Salon");
+
+
+        string lRoot = "D:/WorkSpace/03_Resources/Dataset/Odometry/";
+        //Mat lMat = imread(root + "SalonTrain1/" + "1" + ".jpg", IMREAD_GRAYSCALE);
+        //Mat lMat2 = imread(root + "SalonTrain1/" + "2" + ".jpg", IMREAD_GRAYSCALE);
+        for (size_t i = 0; i < 6; i++)
+        {
+            auto filename = lRoot + "SalonTrain1/" + to_string(i+1) + ".jpg";
+            Mat lMat = imread(filename, IMREAD_GRAYSCALE);
+            mLocalizer.LearnOrientation(lMat, 0, "Salon", 0);
+            mLocalizer.LearnOrientation(lMat, 0, "Cuisine", 1);
+            mLocalizer.LearnOrientation(lMat, 0, "Cuisine", 2);
+        }
+        mLocalizer.UpdateLandmarkDistance(0, 1, 2, 30);
+        mLocalizer.UpdateLandmarkDistance(0, 2, 3, 30);
+        mLocalizer.AddLandmarkToPath(0, 0);
+        mLocalizer.AddLandmarkToPath(0, 1);
+
+        for (size_t i = 0; i < 6; i++)
+        {
+            auto filename = lRoot + "SalonTrain1/" + to_string(i+1) + ".jpg";
+            Mat lMat = imread(filename, IMREAD_GRAYSCALE);
+            int lConfidence = 0;
+            cout << mLocalizer.GetOrientation(lMat, 0, 0, &lConfidence);
+            cout << " avec confidence " << lConfidence << endl;
+        }
+
+        //int lPath1 = mLocalizer.FindPath(0, 1);
+        int lPath1 = mLocalizer.FindPathToRoom(0, "Cuisine");
+        cout << lPath1;
+        //int lPath2 = mLocalizer.FindPath(1, 0);
+        cout << mLocalizer.mMap.mPaths[lPath1].mLandmarks.size() << endl;
+        //cout << mLocalizer.mMap.mPaths[lPath2].mLandmarks.size() << endl;
+    }
+
 };
 
 int main() {
     initParameters();
 
     TopoMapTester lTester = TopoMapTester();
-    lTester.TestLocalization();
+    lTester.TestOrienatation();
+    //lTester.TestLocalization();
     //lTester.Run();
 
     // New Localization tester

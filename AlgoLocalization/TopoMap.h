@@ -4,12 +4,14 @@
 namespace Localization
 {
 
+    using vMatches = vector<vector<DMatch>>;
     class Path
     {
     public:
         vector<int> mLandmarks; // landmarks in the path
         vector<bool> mActive; // if they are active
         int mCurrentLandmark = 0;
+        int mCurrentStep = 0;
 
         friend class cereal::access;
         template<class Archive>
@@ -72,6 +74,21 @@ namespace Localization
             }
         }
 
+        int CurrentStep()
+        {
+            return mCurrentStep;
+        }
+
+        int CurrentLandmark()
+        {
+            if (mCurrentStep >= 0 && mCurrentStep <= mLandmarks.size())
+            {
+                return mLandmarks[mCurrentStep];
+            }
+            return -1;
+        }
+
+
         int NextLandmark()
         {
             return mCurrentLandmark + 1;
@@ -114,6 +131,19 @@ namespace Localization
             }
             return false;
         }
+
+        bool ContainsPart(int iPrevious, int iNext)
+        {
+            for (size_t i = 0; i < mLandmarks.size() - 1; i++)
+            {
+                if (mLandmarks[i] == iPrevious && mLandmarks[i + 1] == iNext)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
     };
 
     class TopoMap
@@ -299,6 +329,10 @@ namespace Localization
             {
                 lIterStart->second.AddPathTo(iLandmarkEnd, distance, orientation);
                 lIterEnd->second.AddPathFrom(iLandmarkStart, distance, -orientation);
+                // inverse chemin
+                lIterEnd->second.AddPathTo(iLandmarkStart, distance, -orientation);
+                lIterStart->second.AddPathFrom(iLandmarkEnd, distance, -orientation);
+
             }
             else
             {
@@ -464,44 +498,99 @@ namespace Localization
             }
         }
 
-        float GetOrientation(const Mat& img, int iPath = -1)
+        int FindNearestLandmarkDescriptors(int iPath, const Mat& iDescriptors, int nImgs = 1)
         {
+            Path lPath = mPaths[iPath];
+            static int lNumImgs = 0;
+            ++lNumImgs;
+            if (mTotalMatches.size() == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                for (auto& x : mTotalMatches)
+                {
+                    int lLandmark = x.first;
+                    if (lPath.ContainsLandmark(lLandmark))
+                    {
+                        x.second = GetTotalMatches(iDescriptors, lLandmark);
+                    }
+                    else
+                    {
+                        x.second = 0;
+                    }
+                }
+                if (lNumImgs == nImgs)
+                {
+                    lNumImgs = 0;
+                    auto lMaxIter = std::max_element(mTotalMatches.begin(), mTotalMatches.end(),
+                        [](const pair<int, float>& p1, const pair<int, float>& p2) {return p1.second < p2.second; });
+                    return (*lMaxIter).first;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+
+
+        float GetOrientation(const Mat& img, int iPath, int iStep, int* oConfidence = nullptr, int* oStep = nullptr)
+        {
+            // Calculate features
             std::vector<KeyPoint> keypoints;
             Mat lDescriptors;
             f2d->detect(img, keypoints);
             extract->compute(img, keypoints, lDescriptors);
-
-            int nLandmarks = 0;
-            bool lUsingPath = (iPath != -1 && mPaths.find(iPath) != mPaths.end());
-
-            // No path, search in all landmarks
-            if (!lUsingPath)
+            // visual landmark
+            if (oStep != NULL)
             {
-                nLandmarks = mLandmarks.size();
+                *oStep = FindLandmarkInPath(iPath, FindNearestLandmarkDescriptors(iPath, lDescriptors, 1));
+            }
+
+            // Find path and the current landmark, update step
+            auto lItPath = mPaths.find(iPath);
+            if (lItPath == mPaths.end())
+            {
+                return -1;
+            }
+            auto lPath = lItPath->second;
+            lPath.UpdatePosition(iStep);
+            auto lCurrentLandmark = lPath.CurrentLandmark();
+            auto lItLandmark = mLandmarks.find(lCurrentLandmark);
+
+            // update landmark current angles for calculation
+            if (lItLandmark == mLandmarks.end())
+            {
+                return -1;
             }
             else
             {
-                nLandmarks = mPaths[iPath].mLandmarks.size();
+                for (auto& edge : lItLandmark->second.GetOutEdges())
+                {
+                    if (lPath.ContainsPart(lCurrentLandmark, edge.first))
+                    {
+                        lItLandmark->second.UpdateAngles(edge.second.GetOrientation());
+                        break;
+                    }
+                }
             }
-            vector<int> lNMatches(nLandmarks, 0);
-            vector<float> lStdDevs(nLandmarks, 0);
-            vector<float> lAngles(nLandmarks, 0);
-            for (size_t i = 0; i < mLandmarks.size(); i++)
+
+            auto lNMatch = 0;
+            float lStdDev = 0;
+            auto lAngle = GetOrientationToLandmark(lDescriptors, lCurrentLandmark, &lStdDev, &lNMatch);
+            auto lCountFeatures = lItLandmark->second.CountFeatures();
+            //auto lConfidence = (int)(lNMatch * 1500.0 / (lStdDev + 0.001F) / lCountFeatures);
+            auto lConfidence = (int)(1000 * min(1.0f, (lNMatch * 1.8f / (lStdDev + 0.001F) / lCountFeatures)));
+
+
+            if (oConfidence != nullptr)
             {
-
-                if (!lUsingPath)
-                {
-                    lAngles[i] = GetOrientationToLandmark(lDescriptors, i, &(lStdDevs[i]), &(lNMatches[i]));
-                }
-                else
-                {
-                    lAngles[i] = GetOrientationToLandmark(lDescriptors, mPaths[iPath].mLandmarks[i], &(lStdDevs[i]), &(lNMatches[i]));
-                }
+                *oConfidence = lConfidence;
             }
-
-            return Angles::AverageAngles(lAngles, lStdDevs, lNMatches);
+            return lAngle;
         }
-
 
         // Return the number of matches between an image and 
         // All the images in iLandmark
@@ -525,8 +614,10 @@ namespace Localization
             vector<int> nMatchList(lLandmarkDescriptors.size());
             for (int i = 0; i < lLandmarkDescriptors.size(); ++i)
             {
+                double a = 0;
+                int b = a;
                 int nMatches = 0;
-                vector<vector<DMatch>> nnMatches;
+                vMatches nnMatches;
                 Mat refDescriptor = lLandmarkDescriptors[i];
                 if (refDescriptor.cols != 0)
                 {
@@ -579,7 +670,7 @@ namespace Localization
             for (int i = 0; i < lLandmarkDescriptors.size(); ++i)
             {
                 int nMatches = 0;
-                vector<vector<DMatch>> nnMatches;
+                vMatches nnMatches;
                 Mat refDescriptor = lLandmarkDescriptors[i];
                 if (refDescriptor.cols != 0)
                 {
@@ -619,7 +710,9 @@ namespace Localization
             vector<float> lAngles{ bestAngle, secondAngle };
 
             float midAngle = Angles::CircularMean(lAngles, vector<float> {factor1, factor2});
-            float stdDev = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle});
+            float stdDev = Angles::CircularStdDev(vector<float> {bestAngle, secondAngle}, vector<float> {(float)maxMatch, (float)secondMatch});
+            cout << bestAngle << ", " << maxMatch << ", " << secondAngle << ',' << secondMatch << endl;
+            cout << stdDev << endl;
             if (stdDev > MAX_STD_DEV || maxMatch < MIN_MATCH)
             {
                 midAngle = NO_ORIENTATION;
@@ -726,7 +819,21 @@ namespace Localization
                 if (lItRoom != mRooms.end()) // found room
                 {
                     int iEndLandmark = lItRoom->second.GetKeyLandmarkToRoom(lCurrentRoom);
-                    return FindPathBetweenLandmarks(iLandmark, iEndLandmark);
+                    if (iEndLandmark != -1)
+                    {
+                        return FindPathBetweenLandmarks(iLandmark, iEndLandmark);
+                    }
+                    else
+                    {
+                        for (auto& x : mLandmarks)
+                        {
+                            if (x.second.mRoom.compare(iRoom) == 0)
+                            {
+                                return FindPathBetweenLandmarks(iLandmark, x.first);
+                            }
+                        }
+                        //return FindPathBetweenLandmarks(iLandmark, )
+                    }
                 }
                 else
                 {

@@ -430,10 +430,10 @@ namespace Localization
             mMap.LearnOrientation(img, iOrientation, iRoom, iLandmark);
         }
 
-        float GetOrientation(const Mat& img, int iPath = -1)
+        float GetOrientation(const Mat& img, int iPath, int iStep, int* oConfidence = nullptr)
         {
             //return mOrientation.GetOrientation(img);
-            return mMap.GetOrientation(img, iPath);
+            return mMap.GetOrientation(img, iPath, iStep, oConfidence);
         }
 
         // ---------------- Odometry / Paths -----------------
